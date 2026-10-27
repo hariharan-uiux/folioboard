@@ -1,0 +1,562 @@
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import type {
+  CanvasState,
+  CanvasElement,
+  ElementType,
+  AnchorPosition,
+  Connection,
+  Board,
+} from './types/milanote';
+import { getInitialState, saveStateToStorage } from './utils/storage';
+import { TEMPLATES } from './utils/templates';
+import { Sidebar } from './components/Sidebar';
+import { Header } from './components/Header';
+import { Canvas } from './components/Canvas';
+import { SearchModal } from './components/SearchModal';
+import { ExportModal } from './components/ExportModal';
+import { TemplateModal } from './components/TemplateModal';
+import { HelpModal } from './components/HelpModal';
+
+export function App() {
+  const [state, setState] = useState<CanvasState>(getInitialState);
+
+  // Modals state
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
+
+  // Active line connection dragging state
+  const [connectingSource, setConnectingSource] = useState<{
+    fromId: string;
+    fromAnchor: AnchorPosition;
+  } | null>(null);
+
+  // Auto-save state to localStorage
+  useEffect(() => {
+    saveStateToStorage(state);
+  }, [state]);
+
+  // Breadcrumbs calculation
+  const breadcrumbs = useMemo(() => {
+    const crumbs: { id: string; title: string }[] = [];
+    let currentId: string | null = state.currentBoardId;
+
+    while (currentId) {
+      const b: Board | undefined = state.boards[currentId];
+      if (b) {
+        crumbs.unshift({ id: b.id, title: b.title || 'Untitled Board' });
+        currentId = b.parentId;
+      } else {
+        break;
+      }
+    }
+
+    if (crumbs.length === 0) {
+      crumbs.push({ id: 'root', title: 'Main Board' });
+    }
+    return crumbs;
+  }, [state.currentBoardId, state.boards]);
+
+  const currentBoard = state.boards[state.currentBoardId] || {
+    id: state.currentBoardId,
+    parentId: null,
+    title: 'Main Board',
+    createdAt: Date.now(),
+  };
+
+  // Navigate to another board
+  const handleNavigateBoard = (targetBoardId: string) => {
+    // If the board doesn't exist yet, create it
+    if (!state.boards[targetBoardId]) {
+      setState((prev) => ({
+        ...prev,
+        boards: {
+          ...prev.boards,
+          [targetBoardId]: {
+            id: targetBoardId,
+            parentId: prev.currentBoardId,
+            title: 'Sub-board',
+            createdAt: Date.now(),
+          },
+        },
+        currentBoardId: targetBoardId,
+        selectedElementIds: [],
+        pan: { x: 60, y: 60 },
+        zoom: 1,
+      }));
+    } else {
+      setState((prev) => ({
+        ...prev,
+        currentBoardId: targetBoardId,
+        selectedElementIds: [],
+        pan: { x: 60, y: 60 },
+        zoom: 1,
+      }));
+    }
+  };
+
+  // Board title update
+  const handleUpdateBoardTitle = (title: string) => {
+    setState((prev) => ({
+      ...prev,
+      boards: {
+        ...prev.boards,
+        [prev.currentBoardId]: {
+          ...(prev.boards[prev.currentBoardId] || {
+            id: prev.currentBoardId,
+            parentId: null,
+            createdAt: Date.now(),
+          }),
+          title,
+        },
+      },
+    }));
+  };
+
+  // Element updates
+  const handleUpdateElement = useCallback(
+    (id: string, updates: Partial<CanvasElement>) => {
+      setState((prev) => {
+        const el = prev.elements[id];
+        if (!el) return prev;
+        return {
+          ...prev,
+          elements: {
+            ...prev.elements,
+            [id]: {
+              ...el,
+              ...updates,
+              updatedAt: Date.now(),
+            },
+          },
+        };
+      });
+    },
+    []
+  );
+
+  // Element factory
+  const createElementPayload = (
+    type: ElementType,
+    x: number,
+    y: number
+  ): CanvasElement => {
+    const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    let width = 280;
+    let height = 180;
+    let color = '#ffffff';
+    let data: any = {};
+
+    switch (type) {
+      case 'note':
+        width = 300;
+        height = 190;
+        color = '#ffffff';
+        data = {
+          title: '',
+          content: '',
+          fontSize: 'md',
+          fontFamily: 'sans',
+        };
+        break;
+      case 'image':
+        width = 320;
+        height = 340;
+        color = '#ffffff';
+        data = {
+          url: 'https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=800&q=80',
+          caption: 'Visual inspiration',
+        };
+        break;
+      case 'link':
+        width = 320;
+        height = 140;
+        color = '#ffffff';
+        data = {
+          url: 'https://milanote.com',
+          title: 'Milanote — The Notes App for Creative Work',
+          description: 'Organize creative ideas, moodboards, and projects visually.',
+          domain: 'milanote.com',
+        };
+        break;
+      case 'task':
+        width = 300;
+        height = 240;
+        color = '#dcfce7';
+        data = {
+          title: 'Action Items',
+          items: [
+            { id: '1', text: 'Define project scope', completed: true },
+            { id: '2', text: 'Gather reference material', completed: false },
+          ],
+        };
+        break;
+      case 'board':
+        width = 300;
+        height = 130;
+        color = '#e0f2fe';
+        const newBoardId = `board_${Date.now()}`;
+        data = {
+          title: 'New Sub-board',
+          description: 'Click to explore nested workspace',
+          targetBoardId: newBoardId,
+        };
+        // Register the new board
+        setState((prev) => ({
+          ...prev,
+          boards: {
+            ...prev.boards,
+            [newBoardId]: {
+              id: newBoardId,
+              parentId: prev.currentBoardId,
+              title: 'New Sub-board',
+              createdAt: Date.now(),
+            },
+          },
+        }));
+        break;
+      case 'column':
+        width = 280;
+        height = 360;
+        color = '#f1f5f9';
+        data = { title: 'Column Stack' };
+        break;
+      case 'color':
+        width = 170;
+        height = 120;
+        color = '#ffffff';
+        data = {
+          hex: '#e29578',
+          name: 'Terracotta',
+          category: 'Accent',
+        };
+        break;
+      case 'sketch':
+        width = 290;
+        height = 230;
+        color = '#ffffff';
+        data = { strokes: [] };
+        break;
+      case 'file':
+        width = 290;
+        height = 80;
+        color = '#ffffff';
+        data = {
+          fileName: 'Design-System-Spec.pdf',
+          fileSize: '3.1 MB',
+          fileType: 'PDF',
+        };
+        break;
+    }
+
+    return {
+      id,
+      boardId: state.currentBoardId,
+      type,
+      x,
+      y,
+      width,
+      height,
+      zIndex: Object.keys(state.elements).length + 1,
+      color,
+      data,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    };
+  };
+
+  // Add element from sidebar click (places in center of visible viewport)
+  const handleAddElementFromSidebar = (type: ElementType) => {
+    const x = Math.round((-state.pan.x + window.innerWidth / 2 - 140) / state.zoom);
+    const y = Math.round((-state.pan.y + window.innerHeight / 2 - 100) / state.zoom);
+    const newEl = createElementPayload(type, x, y);
+
+    setState((prev) => ({
+      ...prev,
+      elements: {
+        ...prev.elements,
+        [newEl.id]: newEl,
+      },
+      selectedElementIds: [newEl.id],
+    }));
+  };
+
+  // Add element at exact coordinates (from drag-and-drop onto canvas)
+  const handleAddElementAtCoords = (type: ElementType, x: number, y: number) => {
+    const newEl = createElementPayload(type, x, y);
+    setState((prev) => ({
+      ...prev,
+      elements: {
+        ...prev.elements,
+        [newEl.id]: newEl,
+      },
+      selectedElementIds: [newEl.id],
+    }));
+  };
+
+  // Delete element
+  const handleDeleteElement = useCallback((id: string) => {
+    setState((prev) => {
+      const { [id]: _, ...remainingElements } = prev.elements;
+      // Also delete any connections attached to this element
+      const remainingConnections: Record<string, Connection> = {};
+      Object.values(prev.connections).forEach((conn) => {
+        if (conn.fromId !== id && conn.toId !== id) {
+          remainingConnections[conn.id] = conn;
+        }
+      });
+
+      return {
+        ...prev,
+        elements: remainingElements,
+        connections: remainingConnections,
+        selectedElementIds: prev.selectedElementIds.filter((elId) => elId !== id),
+      };
+    });
+  }, []);
+
+  // Delete selected elements
+  const handleDeleteSelected = () => {
+    state.selectedElementIds.forEach((id) => handleDeleteElement(id));
+  };
+
+  // Duplicate element
+  const handleDuplicateElement = useCallback((id: string) => {
+    setState((prev) => {
+      const original = prev.elements[id];
+      if (!original) return prev;
+
+      const newId = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const duplicated: CanvasElement = {
+        ...original,
+        id: newId,
+        x: original.x + 30,
+        y: original.y + 30,
+        zIndex: Object.keys(prev.elements).length + 1,
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      return {
+        ...prev,
+        elements: {
+          ...prev.elements,
+          [newId]: duplicated,
+        },
+        selectedElementIds: [newId],
+      };
+    });
+  }, []);
+
+  // Add line connection
+  const handleAddConnection = (
+    fromId: string,
+    toId: string,
+    fromAnchor: AnchorPosition,
+    toAnchor: AnchorPosition
+  ) => {
+    const connId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newConn: Connection = {
+      id: connId,
+      boardId: state.currentBoardId,
+      fromId,
+      toId,
+      fromAnchor,
+      toAnchor,
+      style: 'curved',
+    };
+
+    setState((prev) => ({
+      ...prev,
+      connections: {
+        ...prev.connections,
+        [connId]: newConn,
+      },
+    }));
+  };
+
+  // Delete connection
+  const handleDeleteConnection = (connId: string) => {
+    setState((prev) => {
+      const { [connId]: _, ...remaining } = prev.connections;
+      return {
+        ...prev,
+        connections: remaining,
+      };
+    });
+  };
+
+  // Update connection label
+  const handleUpdateConnectionLabel = (connId: string, label: string) => {
+    setState((prev) => {
+      const conn = prev.connections[connId];
+      if (!conn) return prev;
+      return {
+        ...prev,
+        connections: {
+          ...prev.connections,
+          [connId]: { ...conn, label },
+        },
+      };
+    });
+  };
+
+  // Reset current board
+  const handleResetBoard = () => {
+    if (confirm('Are you sure you want to clear all elements from this board?')) {
+      setState((prev) => {
+        const remainingElements: Record<string, CanvasElement> = {};
+        Object.values(prev.elements).forEach((el) => {
+          if (el.boardId !== prev.currentBoardId) {
+            remainingElements[el.id] = el;
+          }
+        });
+
+        const remainingConnections: Record<string, Connection> = {};
+        Object.values(prev.connections).forEach((conn) => {
+          if (conn.boardId !== prev.currentBoardId) {
+            remainingConnections[conn.id] = conn;
+          }
+        });
+
+        return {
+          ...prev,
+          elements: remainingElements,
+          connections: remainingConnections,
+          selectedElementIds: [],
+        };
+      });
+    }
+  };
+
+  // Load pre-configured template
+  const handleLoadTemplate = (templateKey: string) => {
+    const tpl = TEMPLATES[templateKey];
+    if (!tpl) return;
+
+    setState((prev) => ({
+      ...prev,
+      currentBoardId: 'root',
+      boards: tpl.boards,
+      elements: tpl.elements,
+      connections: tpl.connections,
+      pan: { x: 50, y: 50 },
+      zoom: 1,
+      selectedElementIds: [],
+    }));
+  };
+
+  // Select item from search modal
+  const handleSelectFromSearch = (elementId: string, boardId: string) => {
+    const el = state.elements[elementId];
+    if (!el) return;
+
+    setState((prev) => ({
+      ...prev,
+      currentBoardId: boardId,
+      selectedElementIds: [elementId],
+      pan: {
+        x: window.innerWidth / 2 - el.x * prev.zoom - (el.width * prev.zoom) / 2,
+        y: window.innerHeight / 2 - el.y * prev.zoom - (el.height * prev.zoom) / 2,
+      },
+    }));
+  };
+
+  return (
+    <div className={`flex flex-col h-screen w-screen overflow-hidden ${state.theme === 'dark' ? 'dark' : ''}`}>
+      {/* Top Header */}
+      <Header
+        currentBoard={currentBoard}
+        breadcrumbs={breadcrumbs}
+        onNavigateBoard={handleNavigateBoard}
+        onUpdateBoardTitle={handleUpdateBoardTitle}
+        onOpenSearch={() => setIsSearchOpen(true)}
+        onOpenExport={() => setIsExportOpen(true)}
+        onOpenTemplates={() => setIsTemplatesOpen(true)}
+        onResetBoard={handleResetBoard}
+        gridVisible={state.gridVisible}
+        onToggleGrid={() => setState((p) => ({ ...p, gridVisible: !p.gridVisible }))}
+        gridSnap={state.gridSnap}
+        onToggleSnap={() => setState((p) => ({ ...p, gridSnap: !p.gridSnap }))}
+        theme={state.theme}
+        onToggleTheme={() =>
+          setState((p) => ({ ...p, theme: p.theme === 'light' ? 'dark' : 'light' }))
+        }
+        zoom={state.zoom}
+      />
+
+      {/* Main Workspace Area (Left Toolbar + Infinite Canvas) */}
+      <div className="flex flex-1 w-full h-[calc(100vh-3.5rem)] overflow-hidden">
+        <Sidebar
+          onAddElement={handleAddElementFromSidebar}
+          onOpenTemplates={() => setIsTemplatesOpen(true)}
+          onOpenHelp={() => setIsHelpOpen(true)}
+          onDeleteSelected={handleDeleteSelected}
+          hasSelection={state.selectedElementIds.length > 0}
+          onStartConnectingMode={() => {
+            if (state.selectedElementIds.length > 0) {
+              setConnectingSource({
+                fromId: state.selectedElementIds[0],
+                fromAnchor: 'right',
+              });
+            } else {
+              alert('Select a card first to start drawing a connection line!');
+            }
+          }}
+        />
+
+        <Canvas
+          currentBoardId={state.currentBoardId}
+          elements={state.elements}
+          connections={state.connections}
+          pan={state.pan}
+          zoom={state.zoom}
+          selectedElementIds={state.selectedElementIds}
+          gridSnap={state.gridSnap}
+          gridVisible={state.gridVisible}
+          theme={state.theme}
+          onPanChange={(pan) => setState((p) => ({ ...p, pan }))}
+          onZoomChange={(zoom) => setState((p) => ({ ...p, zoom }))}
+          onSelectElements={(ids) => setState((p) => ({ ...p, selectedElementIds: ids }))}
+          onUpdateElement={handleUpdateElement}
+          onDeleteElement={handleDeleteElement}
+          onDuplicateElement={handleDuplicateElement}
+          onAddElementAtCoords={handleAddElementAtCoords}
+          onNavigateBoard={handleNavigateBoard}
+          onAddConnection={handleAddConnection}
+          onDeleteConnection={handleDeleteConnection}
+          onUpdateConnectionLabel={handleUpdateConnectionLabel}
+          connectingSource={connectingSource}
+          setConnectingSource={setConnectingSource}
+        />
+      </div>
+
+      {/* Modals */}
+      <SearchModal
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        elements={state.elements}
+        boards={state.boards}
+        onSelectElement={handleSelectFromSearch}
+      />
+
+      <ExportModal
+        isOpen={isExportOpen}
+        onClose={() => setIsExportOpen(false)}
+        state={state}
+        onImportState={(newState) => setState(newState)}
+      />
+
+      <TemplateModal
+        isOpen={isTemplatesOpen}
+        onClose={() => setIsTemplatesOpen(false)}
+        onLoadTemplate={handleLoadTemplate}
+      />
+
+      <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+    </div>
+  );
+}
+
+export default App;

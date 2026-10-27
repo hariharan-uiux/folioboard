@@ -1,0 +1,52 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-serif: 'Playfair Display', Georgia, serif;
+    --canvas-bg: #f8f9fa;
+  }
+  
+  body {
+    font-family: var(--font-inter);
+    user-select: none;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Milanote Dot Grid */
+.canvas-grid {
+  background-color: #f7f7f9;
+  background-image: radial-gradient(circle, rgba(160, 164, 178, 0.45) 1.25px, transparent 1.25px);
+  background-size: 24px 24px;
+}
+
+.canvas-grid-dark {
+  background-color: #121316;
+  background-image: radial-gradient(circle, rgba(100, 106, 120, 0.45) 1.25px, transparent 1.25px);
+  background-size: 24px 24px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(150, 150, 160, 0.3);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(150, 150, 160, 0.6);
+}
+
+/* Resizer handle helper */
+.resize-handle {
+  touch-action: none;
+}
