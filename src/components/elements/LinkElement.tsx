@@ -45,7 +45,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
   })() : 'link');
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-lg p-3.5 border border-neutral-200/80 shadow-xs justify-between group">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg p-3.5 border border-neutral-200/80 dark:border-neutral-700/80 shadow-xs justify-between group">
       {isEditing ? (
         <div className="flex flex-col gap-2 select-text">
           <input
@@ -53,25 +53,25 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
             value={title}
             placeholder="Link Title"
             onChange={(e) => setTitle(e.target.value)}
-            className="w-full text-xs font-semibold px-2 py-1 border border-neutral-200 rounded outline-none"
+            className="w-full text-xs font-semibold px-2 py-1 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white rounded outline-none"
           />
           <input
             type="text"
             value={url}
             placeholder="URL (https://...)"
             onChange={(e) => setUrl(e.target.value)}
-            className="w-full text-xs px-2 py-1 border border-neutral-200 rounded outline-none"
+            className="w-full text-xs px-2 py-1 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white rounded outline-none"
           />
           <textarea
             value={description}
             placeholder="Description / note..."
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className="w-full text-xs px-2 py-1 border border-neutral-200 rounded outline-none resize-none"
+            className="w-full text-xs px-2 py-1 border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white rounded outline-none resize-none"
           />
           <button
             onClick={handleSave}
-            className="self-end flex items-center gap-1 px-2.5 py-1 bg-neutral-900 text-white rounded text-xs font-medium"
+            className="self-end flex items-center gap-1 px-2.5 py-1 bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 rounded text-xs font-medium"
           >
             <Check className="w-3 h-3" /> Save
           </button>
@@ -80,14 +80,14 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
         <>
           <div className="flex flex-col gap-1.5 select-text">
             <div className="flex items-center justify-between">
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 text-neutral-600">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
                 <Globe className="w-2.5 h-2.5" />
                 {domain}
               </span>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="p-1 text-neutral-400 hover:text-neutral-700 rounded hover:bg-neutral-100"
+                  className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
                   title="Edit link"
                 >
                   <Edit2 className="w-3 h-3" />
@@ -97,7 +97,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
                     href={data.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-1 text-neutral-400 hover:text-neutral-700 rounded hover:bg-neutral-100"
+                    className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded hover:bg-neutral-100 dark:hover:bg-neutral-800"
                     title="Open in new tab"
                   >
                     <ExternalLink className="w-3 h-3" />
@@ -106,11 +106,11 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
               </div>
             </div>
 
-            <h4 className="text-xs font-semibold text-neutral-900 line-clamp-2 mt-1">
+            <h4 className="text-xs font-semibold text-neutral-900 dark:text-neutral-100 line-clamp-2 mt-1">
               {data.title || data.url || 'Untitled Link'}
             </h4>
             {data.description && (
-              <p className="text-[11px] text-neutral-500 line-clamp-2 leading-relaxed">
+              <p className="text-[11px] text-neutral-500 dark:text-neutral-400 line-clamp-2 leading-relaxed">
                 {data.description}
               </p>
             )}
@@ -121,7 +121,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
               href={data.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-2 text-[10px] text-neutral-400 hover:text-neutral-700 truncate block border-t border-neutral-100 pt-1.5"
+              className="mt-2 text-[10px] text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300 truncate block border-t border-neutral-100 dark:border-neutral-800 pt-1.5"
             >
               {data.url}
             </a>

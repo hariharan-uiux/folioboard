@@ -37,6 +37,15 @@ export function App() {
     saveStateToStorage(state);
   }, [state]);
 
+  // Sync dark theme class to document root
+  useEffect(() => {
+    if (state.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [state.theme]);
+
   // Breadcrumbs calculation
   const breadcrumbs = useMemo(() => {
     const crumbs: { id: string; title: string }[] = [];

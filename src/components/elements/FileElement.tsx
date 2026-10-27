@@ -33,9 +33,9 @@ export const FileElement: React.FC<FileElementProps> = ({ element, onUpdate }) =
   };
 
   return (
-    <div className="flex items-center gap-3 h-full w-full bg-white rounded-lg p-3.5 border border-neutral-200/90 shadow-xs select-text">
-      <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex flex-col items-center justify-center shrink-0">
-        <FileText className="w-5 h-5 text-red-500" />
+    <div className="flex items-center gap-3 h-full w-full bg-white dark:bg-[#1e2024] rounded-lg p-3.5 border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs select-text">
+      <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex flex-col items-center justify-center shrink-0">
+        <FileText className="w-5 h-5 text-red-500 dark:text-red-400" />
       </div>
 
       <div className="flex-1 min-w-0">
@@ -44,11 +44,11 @@ export const FileElement: React.FC<FileElementProps> = ({ element, onUpdate }) =
           value={data.fileName || ''}
           placeholder="Filename.pdf"
           onChange={handleNameChange}
-          className="font-medium text-xs text-neutral-900 outline-none bg-transparent w-full truncate"
+          className="font-medium text-xs text-neutral-900 dark:text-white outline-none bg-transparent w-full truncate"
         />
         <div className="flex items-center gap-2 mt-0.5">
-          <span className="text-[10px] text-neutral-400">{data.fileSize || '1.2 MB'}</span>
-          <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-neutral-100 text-neutral-500">
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500">{data.fileSize || '1.2 MB'}</span>
+          <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
             {data.fileType || 'PDF'}
           </span>
         </div>
@@ -57,7 +57,7 @@ export const FileElement: React.FC<FileElementProps> = ({ element, onUpdate }) =
       <button
         onClick={handleDownload}
         title="Download file"
-        className="p-1.5 text-neutral-400 hover:text-neutral-800 rounded-md hover:bg-neutral-100 transition-colors shrink-0"
+        className="p-1.5 text-neutral-400 dark:text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors shrink-0"
       >
         <Download className="w-4 h-4" />
       </button>

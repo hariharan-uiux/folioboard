@@ -8,7 +8,7 @@ interface SketchElementProps {
   isSelected: boolean;
 }
 
-const PEN_COLORS = ['#2d3748', '#e29578', '#83c5be', '#3b82f6', '#ef4444'];
+const PEN_COLORS = ['#2d3748', '#ffffff', '#e29578', '#83c5be', '#3b82f6', '#ef4444'];
 
 export const SketchElement: React.FC<SketchElementProps> = ({ element, onUpdate }) => {
   const data = element.data || { strokes: [] };
@@ -105,11 +105,11 @@ export const SketchElement: React.FC<SketchElementProps> = ({ element, onUpdate 
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-lg overflow-hidden border border-neutral-200/90 shadow-xs">
-      <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-50/80 border-b border-neutral-100">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg overflow-hidden border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-neutral-50/80 dark:bg-neutral-800/80 border-b border-neutral-100 dark:border-neutral-700">
         <div className="flex items-center gap-1.5">
-          <PenTool className="w-3.5 h-3.5 text-neutral-500" />
-          <span className="text-[11px] font-medium text-neutral-700">Doodle / Sketch</span>
+          <PenTool className="w-3.5 h-3.5 text-neutral-500 dark:text-neutral-400" />
+          <span className="text-[11px] font-medium text-neutral-700 dark:text-neutral-200">Doodle / Sketch</span>
         </div>
         <div className="flex items-center gap-1.5">
           {PEN_COLORS.map((c) => (
@@ -117,14 +117,16 @@ export const SketchElement: React.FC<SketchElementProps> = ({ element, onUpdate 
               key={c}
               onClick={() => setCurrentColor(c)}
               className={`w-3.5 h-3.5 rounded-full border ${
-                currentColor === c ? 'ring-2 ring-neutral-400 scale-110' : 'border-black/10'
+                currentColor === c
+                  ? 'ring-2 ring-neutral-400 dark:ring-white scale-110'
+                  : 'border-black/10 dark:border-white/20'
               }`}
               style={{ backgroundColor: c }}
             />
           ))}
           <button
             onClick={handleClear}
-            className="p-1 text-neutral-400 hover:text-neutral-700 rounded hover:bg-neutral-200/50 ml-1"
+            className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded hover:bg-neutral-200/50 dark:hover:bg-neutral-700/50 ml-1"
             title="Clear drawing"
           >
             <RotateCcw className="w-3 h-3" />
@@ -132,7 +134,7 @@ export const SketchElement: React.FC<SketchElementProps> = ({ element, onUpdate 
         </div>
       </div>
 
-      <div className="relative flex-1 bg-white cursor-crosshair">
+      <div className="relative flex-1 bg-white dark:bg-[#15171a] cursor-crosshair">
         <canvas
           ref={canvasRef}
           width={element.width || 280}

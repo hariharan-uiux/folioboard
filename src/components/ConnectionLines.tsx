@@ -156,12 +156,12 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({
             >
               <div className="flex items-center justify-center">
                 {conn.label ? (
-                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 border border-neutral-200 shadow-2xs text-[10px] font-medium text-neutral-600 group-hover:border-blue-400 backdrop-blur-xs">
+                  <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/90 dark:bg-neutral-800/90 border border-neutral-200 dark:border-neutral-700 shadow-2xs text-[10px] font-medium text-neutral-600 dark:text-neutral-300 group-hover:border-blue-400 backdrop-blur-xs">
                     <input
                       type="text"
                       value={conn.label}
                       onChange={(e) => onUpdateConnectionLabel?.(conn.id, e.target.value)}
-                      className="bg-transparent text-center outline-none w-14 truncate"
+                      className="bg-transparent text-center outline-none w-14 truncate text-neutral-800 dark:text-neutral-200"
                       onClick={(e) => e.stopPropagation()}
                     />
                     <button
@@ -175,7 +175,7 @@ export const ConnectionLines: React.FC<ConnectionLinesProps> = ({
                 ) : (
                   <button
                     onClick={() => onDeleteConnection(conn.id)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white border border-neutral-200 rounded-full text-neutral-400 hover:text-red-500 shadow-2xs"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-full text-neutral-400 hover:text-red-500 shadow-2xs"
                     title="Remove link"
                   >
                     <X className="w-3 h-3" />

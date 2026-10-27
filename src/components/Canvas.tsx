@@ -109,6 +109,15 @@ export const Canvas: React.FC<CanvasProps> = ({
     return Math.round(val / 20) * 20;
   };
 
+  const getCardBg = (color?: string) => {
+    if (theme === 'dark') {
+      if (!color || color === '#ffffff' || color === '#fafafb') {
+        return '#1e2024';
+      }
+    }
+    return color || '#ffffff';
+  };
+
   // Convert client viewport coordinates to canvas coordinates
   const clientToCanvas = useCallback(
     (clientX: number, clientY: number) => {
@@ -152,7 +161,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (e.button === 1 || e.altKey || (e.button === 0 && !e.shiftKey)) {
       // Pan or selection clear
       if (e.button === 0 && !e.altKey && !e.shiftKey) {
-        // Start marquee selection or pan
         setIsPanning(true);
         setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
         onSelectElements([]);
@@ -193,7 +201,6 @@ export const Canvas: React.FC<CanvasProps> = ({
       const dy = newY - draggedEl.y;
 
       if (dx !== 0 || dy !== 0) {
-        // If multiple items are selected, move them as a group!
         if (selectedElementIds.includes(draggingElementId) && selectedElementIds.length > 1) {
           selectedElementIds.forEach((id) => {
             const item = elements[id];
@@ -288,7 +295,6 @@ export const Canvas: React.FC<CanvasProps> = ({
     if (!connectingSource) {
       setConnectingSource({ fromId: el.id, fromAnchor: anchor });
     } else {
-      // Connect!
       if (connectingSource.fromId !== el.id) {
         onAddConnection(connectingSource.fromId, el.id, connectingSource.fromAnchor, anchor);
       }
@@ -314,7 +320,6 @@ export const Canvas: React.FC<CanvasProps> = ({
   // Global keydown (Delete, Duplicate)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Check if user is typing in an input/textarea
       const target = e.target as HTMLElement;
       if (
         target.tagName === 'INPUT' ||
@@ -349,7 +354,7 @@ export const Canvas: React.FC<CanvasProps> = ({
       onWheel={handleWheel}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`relative flex-1 w-full h-full overflow-hidden select-none cursor-default ${
+      className={`relative flex-1 w-full h-full overflow-hidden select-none cursor-default transition-colors ${
         gridVisible
           ? theme === 'dark'
             ? 'canvas-grid-dark'
@@ -402,13 +407,14 @@ export const Canvas: React.FC<CanvasProps> = ({
         {/* Render Canvas Elements */}
         {boardElements.map((el) => {
           const isSelected = selectedElementIds.includes(el.id);
+          const computedBg = getCardBg(el.color);
 
           return (
             <div
               key={el.id}
               id={`el-${el.id}`}
               onMouseDown={(e) => handleElementMouseDown(e, el)}
-              className={`absolute rounded-xl transition-shadow group/card ${
+              className={`absolute rounded-xl transition-shadow group/card border border-neutral-200/60 dark:border-neutral-700/80 ${
                 isSelected
                   ? 'ring-2 ring-blue-500 shadow-xl'
                   : 'shadow-xs hover:shadow-md'
@@ -417,7 +423,7 @@ export const Canvas: React.FC<CanvasProps> = ({
                 transform: `translate(${el.x}px, ${el.y}px)`,
                 width: `${el.width}px`,
                 height: `${el.height}px`,
-                backgroundColor: el.color || '#ffffff',
+                backgroundColor: computedBg,
                 zIndex: isSelected ? 30 : el.zIndex || 1,
               }}
             >
@@ -517,22 +523,22 @@ export const Canvas: React.FC<CanvasProps> = ({
               {/* 4 Connection Anchors (top, right, bottom, left) on hover */}
               <button
                 onMouseDown={(e) => handleAnchorMouseDown(e, el, 'top')}
-                className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-neutral-400 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
                 title="Connect from Top"
               />
               <button
                 onMouseDown={(e) => handleAnchorMouseDown(e, el, 'right')}
-                className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-neutral-400 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
                 title="Connect from Right"
               />
               <button
                 onMouseDown={(e) => handleAnchorMouseDown(e, el, 'bottom')}
-                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-neutral-400 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
                 title="Connect from Bottom"
               />
               <button
                 onMouseDown={(e) => handleAnchorMouseDown(e, el, 'left')}
-                className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-neutral-400 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
                 title="Connect from Left"
               />
 
@@ -559,10 +565,10 @@ export const Canvas: React.FC<CanvasProps> = ({
       </div>
 
       {/* Floating Bottom-Right Zoom & View Controls */}
-      <div className="absolute bottom-6 right-6 flex items-center gap-1 p-1 bg-white/95 backdrop-blur-md rounded-xl border border-neutral-200/90 shadow-lg select-none z-30">
+      <div className="absolute bottom-6 right-6 flex items-center gap-1 p-1 bg-white/95 dark:bg-[#1e2024]/95 backdrop-blur-md rounded-xl border border-neutral-200/90 dark:border-neutral-700 shadow-lg select-none z-30 transition-colors">
         <button
           onClick={() => onZoomChange(Math.max(0.25, zoom - 0.15))}
-          className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+          className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Zoom out"
         >
           <Minus className="w-4 h-4" />
@@ -573,7 +579,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             onZoomChange(1.0);
             onPanChange({ x: 40, y: 40 });
           }}
-          className="px-2 py-1 text-xs font-medium font-mono text-neutral-700 hover:text-neutral-950 hover:bg-neutral-100 rounded-md transition-colors"
+          className="px-2 py-1 text-xs font-medium font-mono text-neutral-700 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
           title="Reset zoom to 100%"
         >
           {Math.round(zoom * 100)}%
@@ -581,17 +587,16 @@ export const Canvas: React.FC<CanvasProps> = ({
 
         <button
           onClick={() => onZoomChange(Math.min(2.5, zoom + 0.15))}
-          className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+          className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Zoom in"
         >
           <Plus className="w-4 h-4" />
         </button>
 
-        <div className="w-[1px] h-4 bg-neutral-200 mx-0.5" />
+        <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
 
         <button
           onClick={() => {
-            // Fit to content
             const visible = boardElements;
             if (visible.length === 0) {
               onPanChange({ x: 40, y: 40 });
@@ -603,7 +608,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             onPanChange({ x: -minX + 80, y: -minY + 80 });
             onZoomChange(0.9);
           }}
-          className="p-2 rounded-lg text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
+          className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Fit to content"
         >
           <Maximize className="w-4 h-4" />
@@ -613,17 +618,17 @@ export const Canvas: React.FC<CanvasProps> = ({
       {/* Quick helper banner if board is blank */}
       {boardElements.length === 0 && (
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="p-6 bg-white/90 backdrop-blur-md rounded-2xl border border-neutral-200/80 shadow-lg text-center max-w-sm pointer-events-auto">
-            <div className="w-12 h-12 rounded-xl bg-neutral-100 text-neutral-600 flex items-center justify-center mx-auto mb-3">
+          <div className="p-6 bg-white/90 dark:bg-[#1e2024]/90 backdrop-blur-md rounded-2xl border border-neutral-200/80 dark:border-neutral-700 shadow-lg text-center max-w-sm pointer-events-auto transition-colors">
+            <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 flex items-center justify-center mx-auto mb-3">
               <ZoomIn className="w-6 h-6" />
             </div>
-            <h3 className="font-semibold text-neutral-900 text-sm">Your board is empty</h3>
-            <p className="text-xs text-neutral-500 mt-1 mb-4">
+            <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">Your board is empty</h3>
+            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 mb-4">
               Drag tools from the left sidebar or click below to start organizing your ideas.
             </p>
             <button
               onClick={() => onAddElementAtCoords('note', 100, 100)}
-              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg text-xs font-medium transition-colors"
+              className="px-4 py-2 bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 rounded-lg text-xs font-medium transition-colors"
             >
               Add First Note
             </button>

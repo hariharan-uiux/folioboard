@@ -18,22 +18,22 @@ export const ColumnElement: React.FC<ColumnElementProps> = ({ element, onUpdate 
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-neutral-100/70 rounded-xl p-3 border-2 border-dashed border-neutral-300/80">
-      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-neutral-200">
-        <Columns3 className="w-4 h-4 text-neutral-500" />
+    <div className="flex flex-col h-full w-full bg-neutral-100/70 dark:bg-[#18191c]/80 rounded-xl p-3 border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80">
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-neutral-200 dark:border-neutral-700">
+        <Columns3 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
         <input
           type="text"
           value={data.title || ''}
           placeholder="Column Title..."
           onChange={handleTitleChange}
-          className="font-semibold text-xs text-neutral-800 bg-transparent outline-none flex-1"
+          className="font-semibold text-xs text-neutral-800 dark:text-neutral-200 bg-transparent outline-none flex-1"
         />
-        <span className="text-[10px] text-neutral-400 bg-neutral-200/80 px-2 py-0.5 rounded-full font-medium">
+        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 bg-neutral-200/80 dark:bg-neutral-800 px-2 py-0.5 rounded-full font-medium">
           Stack
         </span>
       </div>
 
-      <div className="flex-1 flex flex-col items-center justify-center text-center p-4 text-neutral-400 border border-neutral-200/60 rounded-lg bg-white/40">
+      <div className="flex-1 flex flex-col items-center justify-center text-center p-4 text-neutral-400 dark:text-neutral-500 border border-neutral-200/60 dark:border-neutral-800 rounded-lg bg-white/40 dark:bg-neutral-900/40">
         <p className="text-xs">Drag notes or cards here to group them</p>
       </div>
     </div>

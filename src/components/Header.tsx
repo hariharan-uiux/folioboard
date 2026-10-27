@@ -48,27 +48,27 @@ export const Header: React.FC<HeaderProps> = ({
   zoom,
 }) => {
   return (
-    <header className="h-14 w-full bg-white border-b border-neutral-200/90 px-4 flex items-center justify-between select-none z-20 shadow-2xs">
+    <header className="h-14 w-full bg-white dark:bg-[#18191c] border-b border-neutral-200/90 dark:border-neutral-800 px-4 flex items-center justify-between select-none z-20 shadow-2xs transition-colors">
       {/* Left: Breadcrumbs & Board Title */}
       <div className="flex items-center gap-2 max-w-[50%]">
-        <nav className="flex items-center gap-1.5 text-xs text-neutral-500 overflow-hidden text-ellipsis whitespace-nowrap">
+        <nav className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 overflow-hidden text-ellipsis whitespace-nowrap">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
             return (
               <React.Fragment key={crumb.id}>
-                {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-400 shrink-0" />}
+                {idx > 0 && <ChevronRight className="w-3.5 h-3.5 text-neutral-400 dark:text-neutral-600 shrink-0" />}
                 {isLast ? (
                   <input
                     type="text"
                     value={currentBoard.title || 'Untitled Board'}
                     onChange={(e) => onUpdateBoardTitle(e.target.value)}
-                    className="font-semibold text-sm text-neutral-900 bg-transparent outline-none border-b border-transparent focus:border-neutral-400 px-1 py-0.5 max-w-[260px] truncate"
+                    className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 bg-transparent outline-none border-b border-transparent focus:border-neutral-400 dark:focus:border-neutral-600 px-1 py-0.5 max-w-[260px] truncate"
                     placeholder="Board Name"
                   />
                 ) : (
                   <button
                     onClick={() => onNavigateBoard(crumb.id)}
-                    className="hover:text-neutral-900 font-medium truncate max-w-[140px] transition-colors"
+                    className="hover:text-neutral-900 dark:hover:text-neutral-100 font-medium truncate max-w-[140px] transition-colors"
                   >
                     {crumb.title}
                   </button>
@@ -82,12 +82,12 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Center: Global Search Bar */}
       <button
         onClick={onOpenSearch}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-100 hover:bg-neutral-200/70 text-neutral-500 hover:text-neutral-800 text-xs transition-colors border border-neutral-200/60"
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-300 text-xs transition-colors border border-neutral-200/60 dark:border-neutral-700/60"
         title="Search cards & notes (Cmd/Ctrl+K)"
       >
         <Search className="w-3.5 h-3.5" />
         <span>Search board...</span>
-        <kbd className="text-[10px] font-mono bg-white px-1.5 py-0.5 rounded border border-neutral-300 text-neutral-400">
+        <kbd className="text-[10px] font-mono bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-400">
           ⌘K
         </kbd>
       </button>
@@ -97,7 +97,7 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Template Switcher button */}
         <button
           onClick={onOpenTemplates}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 hover:bg-neutral-100 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Browse board templates"
         >
           <Sparkles className="w-3.5 h-3.5 text-amber-500" />
@@ -108,7 +108,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleGrid}
           className={`p-1.5 rounded-lg text-xs transition-colors ${
-            gridVisible ? 'text-neutral-900 bg-neutral-100' : 'text-neutral-400 hover:bg-neutral-100'
+            gridVisible
+              ? 'text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800'
+              : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
           }`}
           title={gridVisible ? 'Hide grid dots' : 'Show grid dots'}
         >
@@ -118,7 +120,9 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={onToggleSnap}
           className={`p-1.5 rounded-lg text-xs transition-colors ${
-            gridSnap ? 'text-blue-600 bg-blue-50' : 'text-neutral-400 hover:bg-neutral-100'
+            gridSnap
+              ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
+              : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
           }`}
           title={gridSnap ? 'Snap to grid: Enabled' : 'Snap to grid: Disabled'}
         >
@@ -126,34 +130,34 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         {/* Zoom display */}
-        <span className="text-[11px] font-mono text-neutral-400 px-1 hidden lg:inline">
+        <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500 px-1 hidden lg:inline">
           {Math.round(zoom * 100)}%
         </span>
 
         {/* Theme toggle */}
         <button
           onClick={onToggleTheme}
-          className="p-1.5 rounded-lg text-neutral-500 hover:bg-neutral-100 transition-colors"
+          className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} theme`}
         >
-          {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+          {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
         </button>
 
         {/* Reset */}
         <button
           onClick={onResetBoard}
-          className="p-1.5 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+          className="p-1.5 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
           title="Reset board to fresh state"
         >
           <RotateCcw className="w-3.5 h-3.5" />
         </button>
 
-        <div className="w-[1px] h-5 bg-neutral-200 mx-1" />
+        <div className="w-[1px] h-5 bg-neutral-200 dark:bg-neutral-800 mx-1" />
 
         {/* Export / Share */}
         <button
           onClick={onOpenExport}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-medium shadow-xs transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-medium shadow-xs transition-colors"
         >
           <Share2 className="w-3.5 h-3.5" />
           <span>Export / Share</span>

@@ -27,25 +27,25 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-neutral-200 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
+        className="w-full max-w-lg bg-white dark:bg-[#18191c] rounded-2xl shadow-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-blue-600" />
-            <h3 className="font-semibold text-base text-neutral-900">Milanote Canvas Guide</h3>
+            <HelpCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <h3 className="font-semibold text-base text-neutral-900 dark:text-white">Milanote Canvas Guide</h3>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 text-neutral-400 hover:text-neutral-700 rounded-lg hover:bg-neutral-100"
+            className="p-1.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         <div className="p-6 overflow-y-auto max-h-[60vh] space-y-4">
-          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-800 uppercase tracking-wider">
-            <Keyboard className="w-4 h-4 text-neutral-500" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
+            <Keyboard className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             <span>Shortcuts & Gestures</span>
           </div>
 
@@ -53,17 +53,17 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
             {SHORTCUTS.map((s, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-neutral-50 border border-neutral-100 text-xs"
+                className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-700/60 text-xs"
               >
-                <span className="text-neutral-600">{s.action}</span>
-                <kbd className="px-2 py-0.5 font-mono text-[11px] bg-white border border-neutral-200 rounded text-neutral-800 shadow-2xs">
+                <span className="text-neutral-600 dark:text-neutral-300">{s.action}</span>
+                <kbd className="px-2 py-0.5 font-mono text-[11px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 shadow-2xs">
                   {s.key}
                 </kbd>
               </div>
             ))}
           </div>
 
-          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 leading-relaxed">
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
             💡 <strong>Pro Tip:</strong> Click any connection line to edit its label or delete it. All changes persist automatically to your local browser storage.
           </div>
         </div>

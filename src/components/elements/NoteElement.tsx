@@ -22,7 +22,17 @@ export const NoteElement: React.FC<NoteElementProps> = ({ element, onUpdate }) =
     });
   };
 
-  const isDark = element.color === '#1e293b';
+  const isExplicitPastel = [
+    '#fefce8',
+    '#fef3c7',
+    '#fce7f3',
+    '#fbcfe8',
+    '#f3e8ff',
+    '#e0f2fe',
+    '#dcfce7',
+    '#ecfdf5',
+    '#fed7aa',
+  ].includes(element.color);
 
   return (
     <div className="flex flex-col h-full w-full p-4 select-text">
@@ -31,8 +41,10 @@ export const NoteElement: React.FC<NoteElementProps> = ({ element, onUpdate }) =
         value={data.title || ''}
         placeholder="Note Title..."
         onChange={handleTitleChange}
-        className={`w-full font-semibold text-sm mb-2 outline-none bg-transparent placeholder-black/30 tracking-tight ${
-          isDark ? 'text-white placeholder-white/40' : 'text-neutral-900'
+        className={`w-full font-semibold text-sm mb-2 outline-none bg-transparent tracking-tight ${
+          isExplicitPastel
+            ? 'text-neutral-900 placeholder-neutral-500'
+            : 'text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500'
         }`}
       />
       <textarea
@@ -42,7 +54,11 @@ export const NoteElement: React.FC<NoteElementProps> = ({ element, onUpdate }) =
         rows={4}
         className={`w-full flex-1 resize-none outline-none bg-transparent text-sm leading-relaxed border-none focus:ring-0 ${
           data.fontFamily === 'serif' ? 'font-serif' : 'font-sans'
-        } ${isDark ? 'text-slate-200 placeholder-white/30' : 'text-neutral-700 placeholder-black/30'}`}
+        } ${
+          isExplicitPastel
+            ? 'text-neutral-800 placeholder-neutral-500'
+            : 'text-neutral-700 dark:text-neutral-200 placeholder-neutral-400 dark:placeholder-neutral-500'
+        }`}
       />
     </div>
   );

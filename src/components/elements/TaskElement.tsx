@@ -70,24 +70,48 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
     });
   };
 
-  const isDark = element.color === '#1e293b';
+  const isExplicitPastel = [
+    '#fefce8',
+    '#fef3c7',
+    '#fce7f3',
+    '#fbcfe8',
+    '#f3e8ff',
+    '#e0f2fe',
+    '#dcfce7',
+    '#ecfdf5',
+    '#fed7aa',
+  ].includes(element.color);
 
   return (
     <div className="flex flex-col h-full w-full p-4 select-text">
       {/* Header & Title */}
       <div className="flex items-center gap-2 mb-2">
-        <CheckSquare className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-neutral-700'}`} />
+        <CheckSquare
+          className={`w-4 h-4 ${
+            isExplicitPastel
+              ? 'text-neutral-700'
+              : 'text-neutral-700 dark:text-amber-400'
+          }`}
+        />
         <input
           type="text"
           value={data.title || ''}
           placeholder="To-Do List"
           onChange={handleTitleChange}
           className={`flex-1 font-semibold text-sm outline-none bg-transparent ${
-            isDark ? 'text-white' : 'text-neutral-900'
+            isExplicitPastel
+              ? 'text-neutral-900 placeholder-neutral-500'
+              : 'text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500'
           }`}
         />
         {totalCount > 0 && (
-          <span className={`text-[11px] font-medium ${isDark ? 'text-neutral-400' : 'text-neutral-500'}`}>
+          <span
+            className={`text-[11px] font-medium ${
+              isExplicitPastel
+                ? 'text-neutral-600'
+                : 'text-neutral-500 dark:text-neutral-400'
+            }`}
+          >
             {completedCount}/{totalCount}
           </span>
         )}
@@ -95,10 +119,14 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
 
       {/* Progress Bar */}
       {totalCount > 0 && (
-        <div className="w-full bg-black/10 rounded-full h-1.5 mb-3 overflow-hidden">
+        <div className="w-full bg-black/10 dark:bg-white/10 rounded-full h-1.5 mb-3 overflow-hidden">
           <div
             className={`h-full transition-all duration-300 rounded-full ${
-              progress === 100 ? 'bg-emerald-500' : isDark ? 'bg-amber-400' : 'bg-neutral-800'
+              progress === 100
+                ? 'bg-emerald-500'
+                : isExplicitPastel
+                ? 'bg-neutral-800'
+                : 'bg-neutral-800 dark:bg-amber-400'
             }`}
             style={{ width: `${progress}%` }}
           />
@@ -114,14 +142,16 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
           >
             <button
               onClick={() => handleToggleItem(item.id)}
-              className="mt-0.5 text-neutral-400 hover:text-neutral-700 transition-colors focus:outline-none"
+              className="mt-0.5 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 transition-colors focus:outline-none"
             >
               {item.completed ? (
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100 dark:fill-emerald-950" />
               ) : (
                 <div
                   className={`w-3.5 h-3.5 rounded border ${
-                    isDark ? 'border-neutral-500' : 'border-neutral-300 hover:border-neutral-500'
+                    isExplicitPastel
+                      ? 'border-neutral-400'
+                      : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-500'
                   }`}
                 />
               )}
@@ -130,10 +160,10 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
               onClick={() => handleToggleItem(item.id)}
               className={`flex-1 cursor-pointer select-text leading-tight ${
                 item.completed
-                  ? 'line-through text-neutral-400'
-                  : isDark
-                  ? 'text-neutral-200'
-                  : 'text-neutral-800'
+                  ? 'line-through text-neutral-400 dark:text-neutral-500'
+                  : isExplicitPastel
+                  ? 'text-neutral-800'
+                  : 'text-neutral-800 dark:text-neutral-200'
               }`}
             >
               {item.text}
@@ -150,7 +180,7 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
       </div>
 
       {/* Add new task input */}
-      <div className="mt-2 pt-2 border-t border-black/10 flex items-center gap-1.5">
+      <div className="mt-2 pt-2 border-t border-black/10 dark:border-white/10 flex items-center gap-1.5">
         <input
           type="text"
           value={newText}
@@ -158,13 +188,15 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
           onChange={(e) => setNewText(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleAddItem()}
           className={`flex-1 text-xs bg-transparent outline-none ${
-            isDark ? 'text-white placeholder-white/30' : 'text-neutral-800 placeholder-black/30'
+            isExplicitPastel
+              ? 'text-neutral-800 placeholder-neutral-500'
+              : 'text-neutral-800 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500'
           }`}
         />
         <button
           onClick={handleAddItem}
           disabled={!newText.trim()}
-          className="p-1 rounded bg-black/5 hover:bg-black/15 disabled:opacity-30 text-neutral-700 transition-colors"
+          className="p-1 rounded bg-black/5 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/20 disabled:opacity-30 text-neutral-700 dark:text-neutral-200 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>

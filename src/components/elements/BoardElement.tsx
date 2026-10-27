@@ -34,13 +34,13 @@ export const BoardElement: React.FC<BoardElementProps> = ({
   return (
     <div
       onDoubleClick={() => onNavigateBoard(targetBoardId)}
-      className="flex flex-col h-full w-full bg-white rounded-lg p-4 border border-neutral-200/90 shadow-xs hover:border-neutral-400/80 transition-all cursor-pointer group"
+      className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg p-4 border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs hover:border-neutral-400/80 dark:hover:border-neutral-500 transition-all cursor-pointer group"
     >
       <div className="flex items-center justify-between mb-2">
-        <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-          <Folder className="w-4 h-4 fill-sky-200 text-sky-600" />
+        <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center">
+          <Folder className="w-4 h-4 fill-sky-200 dark:fill-sky-800 text-sky-600 dark:text-sky-400" />
         </div>
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500">
+        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
           {childItemCount} {childItemCount === 1 ? 'item' : 'items'}
         </span>
       </div>
@@ -50,7 +50,7 @@ export const BoardElement: React.FC<BoardElementProps> = ({
         value={data.title || ''}
         placeholder="Board Name"
         onChange={handleTitleChange}
-        className="font-semibold text-sm text-neutral-900 outline-none bg-transparent mb-1"
+        className="font-semibold text-sm text-neutral-900 dark:text-white outline-none bg-transparent mb-1"
         onClick={(e) => e.stopPropagation()}
       />
 
@@ -59,18 +59,18 @@ export const BoardElement: React.FC<BoardElementProps> = ({
         value={data.description || ''}
         placeholder="Short description or purpose..."
         onChange={handleDescChange}
-        className="text-xs text-neutral-500 outline-none bg-transparent flex-1 mb-2 placeholder-neutral-400"
+        className="text-xs text-neutral-500 dark:text-neutral-400 outline-none bg-transparent flex-1 mb-2 placeholder-neutral-400 dark:placeholder-neutral-500"
         onClick={(e) => e.stopPropagation()}
       />
 
-      <div className="pt-2 border-t border-neutral-100 flex items-center justify-between">
-        <span className="text-[10px] text-neutral-400 font-medium">Double-click to open</span>
+      <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">Double-click to open</span>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onNavigateBoard(targetBoardId);
           }}
-          className="flex items-center gap-1 text-xs font-medium text-neutral-800 hover:text-black group-hover:translate-x-0.5 transition-all"
+          className="flex items-center gap-1 text-xs font-medium text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white group-hover:translate-x-0.5 transition-all"
         >
           Open <ArrowRight className="w-3 h-3" />
         </button>

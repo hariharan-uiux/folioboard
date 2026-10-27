@@ -32,7 +32,7 @@ export const ColorElement: React.FC<ColorElementProps> = ({ element, onUpdate })
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white rounded-lg overflow-hidden border border-neutral-200/90 shadow-xs">
+    <div className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg overflow-hidden border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs">
       {/* Color Swatch block */}
       <div
         className="relative flex-1 min-h-[90px] w-full transition-colors flex items-end p-2 cursor-pointer group"
@@ -57,19 +57,19 @@ export const ColorElement: React.FC<ColorElementProps> = ({ element, onUpdate })
       </div>
 
       {/* Info footer */}
-      <div className="p-3 bg-white flex flex-col gap-0.5 select-text">
+      <div className="p-3 bg-white dark:bg-[#1e2024] flex flex-col gap-0.5 select-text">
         <input
           type="text"
           value={data.name || ''}
           placeholder="Color Name"
           onChange={handleNameChange}
-          className="font-medium text-xs text-neutral-900 outline-none bg-transparent"
+          className="font-medium text-xs text-neutral-900 dark:text-white outline-none bg-transparent"
         />
         <div className="flex items-center justify-between mt-1">
-          <span className="font-mono text-[11px] text-neutral-500 uppercase tracking-wider">
+          <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
             {data.hex || '#000000'}
           </span>
-          <span className="text-[10px] text-neutral-400 capitalize">
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 capitalize">
             {data.category || 'Palette'}
           </span>
         </div>
