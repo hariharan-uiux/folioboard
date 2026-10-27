@@ -81,5 +81,4 @@ npm run preview
 
 ---
 
-## 📄 License
-MIT
+
