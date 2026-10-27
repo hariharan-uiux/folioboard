@@ -1,8 +1,25 @@
 @import "tailwindcss";
 
+@theme {
+  --radius-xs: 0px;
+  --radius-sm: 0px;
+  --radius-md: 0px;
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+  --radius-4xl: 0px;
+  --radius-full: 0px;
+  --radius: 0px;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
+  *, ::before, ::after {
+    border-radius: 0px !important;
+  }
+
   :root {
     --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     --font-serif: 'Playfair Display', Georgia, serif;
@@ -16,7 +33,7 @@
   }
 }
 
-/* Milanote Dot Grid */
+/* Folioboard Dot Grid */
 .canvas-grid {
   background-color: #f7f7f9;
   background-image: radial-gradient(circle, rgba(160, 164, 178, 0.45) 1.25px, transparent 1.25px);
@@ -43,7 +60,7 @@
 
 ::-webkit-scrollbar-thumb {
   background: rgba(150, 150, 160, 0.3);
-  border-radius: 9999px;
+  border-radius: 0px !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {

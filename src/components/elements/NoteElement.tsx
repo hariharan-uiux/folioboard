@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CanvasElement } from '../../types/milanote';
+import type { CanvasElement } from '../../types/folioboard';
 
 interface NoteElementProps {
   element: CanvasElement;
@@ -34,6 +34,13 @@ export const NoteElement: React.FC<NoteElementProps> = ({ element, onUpdate }) =
     '#fed7aa',
   ].includes(element.color);
 
+  const fontSizeClass = {
+    sm: 'text-xs',
+    md: 'text-sm',
+    lg: 'text-base',
+    xl: 'text-lg',
+  }[data.fontSize as string] || 'text-sm';
+
   return (
     <div className="flex flex-col h-full w-full p-4 select-text">
       <input
@@ -52,7 +59,7 @@ export const NoteElement: React.FC<NoteElementProps> = ({ element, onUpdate }) =
         placeholder="Type your ideas, inspiration, or notes..."
         onChange={handleContentChange}
         rows={4}
-        className={`w-full flex-1 resize-none outline-none bg-transparent text-sm leading-relaxed border-none focus:ring-0 ${
+        className={`w-full flex-1 resize-none outline-none bg-transparent leading-relaxed border-none focus:ring-0 ${fontSizeClass} ${
           data.fontFamily === 'serif' ? 'font-serif' : 'font-sans'
         } ${
           isExplicitPastel

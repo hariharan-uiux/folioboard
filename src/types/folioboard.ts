@@ -36,6 +36,7 @@ export interface ImageData {
   caption?: string;
   alt?: string;
   aspectRatio?: number;
+  cropToGrid?: boolean;
 }
 
 export interface LinkData {
@@ -106,6 +107,7 @@ export interface CanvasElement {
   data: any;
   createdAt: number;
   updatedAt: number;
+  locked?: boolean;
 }
 
 export interface Connection {

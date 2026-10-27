@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CanvasState } from '../types/milanote';
+import type { CanvasState } from '../types/folioboard';
 import { exportBoardAsJSON, exportBoardAsMarkdown } from '../utils/storage';
 import { X, Download, FileJson, FileText, Copy, Check, Upload, Printer } from 'lucide-react';
 
@@ -18,6 +18,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'markdown' | 'json'>('markdown');
   const [copied, setCopied] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -74,7 +75,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
           onClose();
         }
       } catch (err) {
-        alert('Invalid JSON board file.');
+        setImportError('Invalid JSON board file. Please choose a valid board export.');
       }
     };
     reader.readAsText(file);
@@ -170,11 +171,23 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             </div>
           ) : (
             <div className="flex flex-col gap-4">
+              {importError && (
+                <div className="p-3 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 rounded-xl flex items-center justify-between text-xs text-red-700 dark:text-red-300">
+                  <span>{importError}</span>
+                  <button
+                    onClick={() => setImportError(null)}
+                    className="p-1 hover:text-red-900 dark:hover:text-red-100 rounded-lg cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               <div className="p-4 bg-blue-50/60 dark:bg-blue-950/30 rounded-xl border border-blue-100 dark:border-blue-900/50 flex items-center justify-between">
                 <div>
                   <h4 className="text-xs font-semibold text-blue-900 dark:text-blue-300">Import Board from JSON</h4>
                   <p className="text-[11px] text-blue-700 dark:text-blue-400 mt-0.5">
-                    Restore a previously exported Milanote canvas file.
+                    Restore a previously exported Folioboard canvas file.
                   </p>
                 </div>
                 <label className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 cursor-pointer">

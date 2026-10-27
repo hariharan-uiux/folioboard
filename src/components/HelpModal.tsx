@@ -37,7 +37,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-center gap-2">
             <DuotoneIcon icon={HelpCircle} className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-            <h3 className="font-semibold text-base text-neutral-900 dark:text-white">Milanote Canvas Guide</h3>
+            <h3 className="font-semibold text-base text-neutral-900 dark:text-white">Folioboard Canvas Guide</h3>
           </div>
           <button
             onClick={onClose}
@@ -60,7 +60,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
                 className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-100 dark:border-neutral-700/60 text-xs"
               >
                 <span className="text-neutral-600 dark:text-neutral-300">{s.action}</span>
-                <kbd className="px-2 py-0.5 font-mono text-[11px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded text-neutral-800 dark:text-neutral-200 shadow-2xs">
+                <kbd className="px-2 py-0.5 font-mono text-[11px] bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 rounded-md text-neutral-800 dark:text-neutral-200 shadow-2xs">
                   {s.key}
                 </kbd>
               </div>

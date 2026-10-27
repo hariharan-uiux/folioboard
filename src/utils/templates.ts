@@ -1,4 +1,4 @@
-import type { Board, CanvasElement, Connection } from '../types/milanote';
+import type { Board, CanvasElement, Connection } from '../types/folioboard';
 
 export interface PreloadedTemplate {
   name: string;
@@ -9,7 +9,7 @@ export interface PreloadedTemplate {
   connections: Record<string, Connection>;
 }
 
-export const MILANOTE_PALETTES = [
+export const FOLIOBOARD_PALETTES = [
   { name: 'White', hex: '#ffffff', textDark: true },
   { name: 'Soft Cream', hex: '#fefce8', textDark: true },
   { name: 'Warm Amber', hex: '#fef3c7', textDark: true },
@@ -240,9 +240,9 @@ export const TEMPLATES: Record<string, PreloadedTemplate> = {
         x: 820,
         y: 490,
         width: 320,
-        height: 120,
+        height: 164,
         zIndex: 1,
-        color: '#e0f2fe',
+        color: '#ffffff',
         data: {
           title: 'Packaging & Editorial Specs',
           description: 'Sub-board with 8 tactile print samples & embossing guidelines',

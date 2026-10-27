@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import type { ElementType } from '../types/milanote';
+import type { ElementType } from '../types/folioboard';
 
 interface KeyboardShortcutsProps {
   onSelectTool: (tool: 'select' | 'hand') => void;

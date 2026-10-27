@@ -1,6 +1,6 @@
 import React from 'react';
-import type { CanvasElement, AnchorPosition } from '../types/milanote';
-import { MILANOTE_PALETTES } from '../utils/templates';
+import type { CanvasElement, AnchorPosition } from '../types/folioboard';
+import { FOLIOBOARD_PALETTES } from '../utils/templates';
 import { DuotoneIcon } from './DuotoneIcon';
 import { Copy, Trash2, ArrowUp, ArrowDown, GitBranch } from 'lucide-react';
 
@@ -32,11 +32,12 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         transform: `translateY(-120%) scale(${Math.max(0.85, 1 / zoom)})`,
         transformOrigin: 'bottom left',
       }}
+      onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
       {/* Color picker */}
       <div className="flex items-center gap-1 px-1.5 border-r border-neutral-200 dark:border-neutral-700">
-        {MILANOTE_PALETTES.slice(0, 7).map((p) => (
+        {FOLIOBOARD_PALETTES.slice(0, 7).map((p) => (
           <button
             key={p.hex}
             onClick={() => onUpdateColor(p.hex)}

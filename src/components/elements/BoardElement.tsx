@@ -1,5 +1,5 @@
 import React from 'react';
-import type { CanvasElement } from '../../types/milanote';
+import type { CanvasElement } from '../../types/folioboard';
 import { DuotoneIcon } from '../DuotoneIcon';
 import { Folder, ArrowRight } from 'lucide-react';
 
@@ -32,46 +32,108 @@ export const BoardElement: React.FC<BoardElementProps> = ({
     });
   };
 
+  const isExplicitPastel = [
+    '#fefce8',
+    '#fef3c7',
+    '#fce7f3',
+    '#fbcfe8',
+    '#f3e8ff',
+    '#e0f2fe',
+    '#dcfce7',
+    '#ecfdf5',
+    '#fed7aa',
+  ].includes(element.color);
+
   return (
     <div
       onDoubleClick={() => onNavigateBoard(targetBoardId)}
-      className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg p-4 border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs hover:border-neutral-400/80 dark:hover:border-neutral-500 transition-all cursor-pointer group"
+      className="flex flex-col h-full w-full p-4 cursor-pointer group select-none justify-between"
     >
+      {/* Header: Folder Icon & Items Count Badge */}
       <div className="flex items-center justify-between mb-2">
-        <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-          <DuotoneIcon icon={Folder} className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+        <div
+          className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 shadow-2xs ${
+            isExplicitPastel
+              ? 'bg-black/10 text-neutral-800'
+              : 'bg-blue-500/10 dark:bg-blue-400/15 text-blue-600 dark:text-blue-400'
+          }`}
+        >
+          <DuotoneIcon
+            icon={Folder}
+            className={`w-4 h-4 ${
+              isExplicitPastel
+                ? 'text-neutral-800'
+                : 'text-blue-600 dark:text-blue-400'
+            }`}
+          />
         </div>
-        <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+        <span
+          className={`text-[11px] font-medium px-2.5 py-0.5 rounded-full ${
+            isExplicitPastel
+              ? 'bg-black/10 text-neutral-800'
+              : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400'
+          }`}
+        >
           {childItemCount} {childItemCount === 1 ? 'item' : 'items'}
         </span>
       </div>
 
-      <input
-        type="text"
-        value={data.title || ''}
-        placeholder="Board Name"
-        onChange={handleTitleChange}
-        className="font-semibold text-sm text-neutral-900 dark:text-white outline-none bg-transparent mb-1"
-        onClick={(e) => e.stopPropagation()}
-      />
+      {/* Title & Description */}
+      <div className="flex-1 flex flex-col justify-center min-h-0 my-1">
+        <input
+          type="text"
+          value={data.title || ''}
+          placeholder="Board Name"
+          onChange={handleTitleChange}
+          className={`font-semibold text-sm outline-none bg-transparent truncate mb-0.5 ${
+            isExplicitPastel
+              ? 'text-neutral-900 placeholder-neutral-500'
+              : 'text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-500'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        />
 
-      <input
-        type="text"
-        value={data.description || ''}
-        placeholder="Short description or purpose..."
-        onChange={handleDescChange}
-        className="text-xs text-neutral-500 dark:text-neutral-400 outline-none bg-transparent flex-1 mb-2 placeholder-neutral-400 dark:placeholder-neutral-500"
-        onClick={(e) => e.stopPropagation()}
-      />
+        <input
+          type="text"
+          value={data.description || ''}
+          placeholder="Short description or purpose..."
+          onChange={handleDescChange}
+          className={`text-xs outline-none bg-transparent truncate ${
+            isExplicitPastel
+              ? 'text-neutral-700 placeholder-neutral-500'
+              : 'text-neutral-500 dark:text-neutral-400 placeholder-neutral-400 dark:placeholder-neutral-500'
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
 
-      <div className="pt-2 border-t border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-        <span className="text-[10px] text-neutral-400 dark:text-neutral-500 font-medium">Double-click to open</span>
+      {/* Footer: Double-click hint & Open button */}
+      <div
+        className={`pt-2.5 border-t flex items-center justify-between mt-auto ${
+          isExplicitPastel
+            ? 'border-black/10'
+            : 'border-neutral-100 dark:border-neutral-800'
+        }`}
+      >
+        <span
+          className={`text-[11px] font-medium ${
+            isExplicitPastel
+              ? 'text-neutral-600'
+              : 'text-neutral-400 dark:text-neutral-500'
+          }`}
+        >
+          Double-click to open
+        </span>
         <button
           onClick={(e) => {
             e.stopPropagation();
             onNavigateBoard(targetBoardId);
           }}
-          className="flex items-center gap-1 text-xs font-medium text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white group-hover:translate-x-0.5 transition-all"
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-all group-hover:translate-x-0.5 active:scale-95 ${
+            isExplicitPastel
+              ? 'bg-black/10 hover:bg-black/15 text-neutral-900'
+              : 'bg-neutral-100 hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700 text-neutral-800 dark:text-neutral-200 hover:text-black dark:hover:text-white'
+          }`}
         >
           Open <ArrowRight className="w-3 h-3" />
         </button>

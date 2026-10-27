@@ -1,11 +1,13 @@
-import type { CanvasState, CanvasElement, Connection } from '../types/milanote';
+import type { CanvasState, CanvasElement, Connection } from '../types/folioboard';
 import { TEMPLATES } from './templates';
 
-const STORAGE_KEY = 'milanote_canvas_state_v1';
+const STORAGE_KEY = 'folioboard_canvas_state_v1';
 
 export function getInitialState(): CanvasState {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved =
+      localStorage.getItem(STORAGE_KEY) ||
+      localStorage.getItem('thuli_canvas_state_v1');
     if (saved) {
       const parsed = JSON.parse(saved);
       if (parsed && parsed.boards && parsed.elements) {
@@ -91,7 +93,7 @@ export function exportBoardAsJSON(state: CanvasState, boardId: string): string {
 }
 
 export function exportBoardAsMarkdown(state: CanvasState, boardId: string): string {
-  const currentBoard = state.boards[boardId] || { title: 'Milanote Board' };
+  const currentBoard = state.boards[boardId] || { title: 'Folioboard Board' };
   let md = `# ${currentBoard.title}\n\n`;
   if (currentBoard.description) {
     md += `> ${currentBoard.description}\n\n---\n\n`;

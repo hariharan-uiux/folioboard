@@ -6,7 +6,7 @@ import type {
   AnchorPosition,
   Connection,
   Board,
-} from './types/milanote';
+} from './types/folioboard';
 import { getInitialState, saveStateToStorage } from './utils/storage';
 import { TEMPLATES } from './utils/templates';
 import { Sidebar } from './components/Sidebar';
@@ -16,7 +16,10 @@ import { SearchModal } from './components/SearchModal';
 import { ExportModal } from './components/ExportModal';
 import { TemplateModal } from './components/TemplateModal';
 import { HelpModal } from './components/HelpModal';
+import { UploadModal, type UploadMediaItem, type UploadFileItem } from './components/UploadModal';
+import { AppDialog, type DialogOptions } from './components/AppDialog';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { isWebUrl, parseUrlMetadata } from './utils/urlHelper';
 
 export function App() {
   const [state, setState] = useState<CanvasState>(getInitialState);
@@ -35,6 +38,15 @@ export function App() {
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [isTemplatesOpen, setIsTemplatesOpen] = useState(false);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [uploadDefaultTab, setUploadDefaultTab] = useState<'media' | 'file'>('media');
+  const [dialogOptions, setDialogOptions] = useState<DialogOptions | null>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const showAppDialog = (opts: DialogOptions) => {
+    setDialogOptions(opts);
+    setIsDialogOpen(true);
+  };
 
   // Active line connection dragging state
   const [connectingSource, setConnectingSource] = useState<{
@@ -171,7 +183,8 @@ export function App() {
   const createElementPayload = (
     type: ElementType,
     x: number,
-    y: number
+    y: number,
+    customData?: any
   ): CanvasElement => {
     const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
     let width = 280;
@@ -202,19 +215,20 @@ export function App() {
         break;
       case 'link':
         width = 320;
-        height = 140;
+        height = 150;
         color = '#ffffff';
         data = {
-          url: 'https://milanote.com',
-          title: 'Milanote — The Notes App for Creative Work',
-          description: 'Organize creative ideas, moodboards, and projects visually.',
-          domain: 'milanote.com',
+          url: '',
+          title: '',
+          description: '',
+          domain: '',
+          favicon: '',
         };
         break;
       case 'task':
         width = 300;
         height = 240;
-        color = '#dcfce7';
+        color = '#ffffff';
         data = {
           title: 'Action Items',
           items: [
@@ -224,13 +238,13 @@ export function App() {
         };
         break;
       case 'board':
-        width = 300;
-        height = 130;
-        color = '#e0f2fe';
+        width = 320;
+        height = 164;
+        color = '#ffffff';
         const newBoardId = `board_${Date.now()}`;
         data = {
           title: 'New Sub-board',
-          description: 'Click to explore nested workspace',
+          description: 'Nested workspace for sub-topics and ideas',
           targetBoardId: newBoardId,
         };
         // Register the new board
@@ -254,8 +268,8 @@ export function App() {
         data = { title: 'Column Stack' };
         break;
       case 'color':
-        width = 170;
-        height = 120;
+        width = 180;
+        height = 145;
         color = '#ffffff';
         data = {
           hex: '#e29578',
@@ -264,14 +278,14 @@ export function App() {
         };
         break;
       case 'sketch':
-        width = 290;
-        height = 230;
+        width = 300;
+        height = 240;
         color = '#ffffff';
         data = { strokes: [] };
         break;
       case 'file':
-        width = 290;
-        height = 80;
+        width = 300;
+        height = 86;
         color = '#ffffff';
         data = {
           fileName: 'Design-System-Spec.pdf',
@@ -291,7 +305,7 @@ export function App() {
       height,
       zIndex: Object.keys(state.elements).length + 1,
       color,
-      data,
+      data: customData ? { ...data, ...customData } : data,
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -314,8 +328,18 @@ export function App() {
   };
 
   // Add element at exact coordinates (from drag-and-drop onto canvas)
-  const handleAddElementAtCoords = (type: ElementType, x: number, y: number) => {
-    const newEl = createElementPayload(type, x, y);
+  const handleAddElementAtCoords = (
+    type: ElementType,
+    x: number,
+    y: number,
+    customData?: any,
+    customW?: number,
+    customH?: number
+  ) => {
+    const newEl = createElementPayload(type, x, y, customData);
+    if (customW) newEl.width = customW;
+    if (customH) newEl.height = customH;
+
     setState((prev) => ({
       ...prev,
       elements: {
@@ -328,15 +352,29 @@ export function App() {
 
   // Add custom image element (from clipboard paste or OS file drop)
   const handleAddImageWithData = useCallback(
-    (dataUrl: string, x?: number, y?: number, name?: string) => {
+    (
+      dataUrl: string,
+      x?: number,
+      y?: number,
+      name?: string,
+      customW?: number,
+      customH?: number
+    ) => {
+      const initialW = customW || 320;
+      const initialH = customH || 340;
       const posX =
         x !== undefined
           ? x
-          : Math.round((-state.pan.x + window.innerWidth / 2 - 160) / state.zoom);
+          : Math.round((-state.pan.x + window.innerWidth / 2 - initialW / 2) / state.zoom);
       const posY =
         y !== undefined
           ? y
-          : Math.round((-state.pan.y + window.innerHeight / 2 - 170) / state.zoom);
+          : Math.round((-state.pan.y + window.innerHeight / 2 - initialH / 2) / state.zoom);
+
+      const isGeneric =
+        !name ||
+        /^(image|screenshot|pasted[\s_-]?image|web[\s_-]?image)(\.\w+)?$/i.test(name.trim());
+      const captionVal = isGeneric ? '' : name.replace(/\.[^/.]+$/, '').trim();
 
       const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
       const newImgEl: CanvasElement = {
@@ -345,13 +383,14 @@ export function App() {
         type: 'image',
         x: posX,
         y: posY,
-        width: 320,
-        height: 340,
+        width: initialW,
+        height: initialH,
         zIndex: Object.keys(state.elements).length + 1,
         color: '#ffffff',
         data: {
           url: dataUrl,
-          caption: name ? name.replace(/\.[^/.]+$/, '') : 'Pasted image reference',
+          caption: captionVal,
+          exactSizeApplied: !!(customW && customH),
         },
         createdAt: Date.now(),
         updatedAt: Date.now(),
@@ -364,6 +403,130 @@ export function App() {
           [id]: newImgEl,
         },
         selectedElementIds: [id],
+      }));
+    },
+    [state.pan, state.zoom, state.currentBoardId, state.elements]
+  );
+
+  // Open upload modal with specified tab ('media' for images & videos, 'file' for documents)
+  const handleOpenUpload = useCallback((tab: 'media' | 'file' = 'media') => {
+    setUploadDefaultTab(tab);
+    setIsUploadOpen(true);
+  }, []);
+
+  // Upload one or multiple media items (images or videos)
+  const handleUploadMedia = useCallback(
+    (items: UploadMediaItem[]) => {
+      if (items.length === 0) return;
+
+      const baseCenterX = Math.round((-state.pan.x + window.innerWidth / 2 - 160) / state.zoom);
+      const baseCenterY = Math.round((-state.pan.y + window.innerHeight / 2 - 140) / state.zoom);
+
+      const newElements: Record<string, CanvasElement> = {};
+      const newSelectedIds: string[] = [];
+
+      items.forEach((item, index) => {
+        const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const w = item.width || (item.isVideo ? 380 : 320);
+        const h = item.height || (item.isVideo ? 260 : 320);
+
+        const col = index % 3;
+        const row = Math.floor(index / 3);
+        const posX = baseCenterX + col * (w + 24);
+        const posY = baseCenterY + row * (h + 24);
+
+        const isGeneric =
+          !item.caption ||
+          /^(image|video|screenshot|pasted[\s_-]?image|web[\s_-]?image)(\.\w+)?$/i.test(
+            item.caption.trim()
+          );
+        const captionVal = isGeneric ? '' : item.caption?.replace(/\.[^/.]+$/, '').trim() || '';
+
+        const newEl: CanvasElement = {
+          id,
+          boardId: state.currentBoardId,
+          type: 'image',
+          x: posX,
+          y: posY,
+          width: w,
+          height: h,
+          zIndex: Object.keys(state.elements).length + index + 1,
+          color: '#ffffff',
+          data: {
+            url: item.url,
+            caption: captionVal,
+            isVideo: Boolean(item.isVideo),
+            exactSizeApplied: Boolean(item.width && item.height),
+          },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        newElements[id] = newEl;
+        newSelectedIds.push(id);
+      });
+
+      setState((prev) => ({
+        ...prev,
+        elements: {
+          ...prev.elements,
+          ...newElements,
+        },
+        selectedElementIds: newSelectedIds,
+      }));
+    },
+    [state.pan, state.zoom, state.currentBoardId, state.elements]
+  );
+
+  // Upload one or multiple document/file items
+  const handleUploadFiles = useCallback(
+    (files: UploadFileItem[]) => {
+      if (files.length === 0) return;
+
+      const baseCenterX = Math.round((-state.pan.x + window.innerWidth / 2 - 150) / state.zoom);
+      const baseCenterY = Math.round((-state.pan.y + window.innerHeight / 2 - 45) / state.zoom);
+
+      const newElements: Record<string, CanvasElement> = {};
+      const newSelectedIds: string[] = [];
+
+      files.forEach((file, index) => {
+        const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const w = 300;
+        const h = 86;
+        const posX = baseCenterX + (index % 2) * (w + 20);
+        const posY = baseCenterY + Math.floor(index / 2) * (h + 16);
+
+        const newEl: CanvasElement = {
+          id,
+          boardId: state.currentBoardId,
+          type: 'file',
+          x: posX,
+          y: posY,
+          width: w,
+          height: h,
+          zIndex: Object.keys(state.elements).length + index + 1,
+          color: '#ffffff',
+          data: {
+            fileName: file.fileName,
+            fileSize: file.fileSize,
+            fileType: file.fileType,
+            downloadUrl: file.downloadUrl || '',
+          },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+        };
+
+        newElements[id] = newEl;
+        newSelectedIds.push(id);
+      });
+
+      setState((prev) => ({
+        ...prev,
+        elements: {
+          ...prev.elements,
+          ...newElements,
+        },
+        selectedElementIds: newSelectedIds,
       }));
     },
     [state.pan, state.zoom, state.currentBoardId, state.elements]
@@ -386,7 +549,24 @@ export function App() {
           const reader = new FileReader();
           reader.onload = (event) => {
             const dataUrl = event.target?.result as string;
-            handleAddImageWithData(dataUrl, undefined, undefined, file.name);
+            const img = new Image();
+            img.onload = () => {
+              const MAX_W = 720;
+              const MAX_H = 560;
+              let w = img.naturalWidth;
+              let h = img.naturalHeight;
+              if (w > MAX_W || h > MAX_H) {
+                const scale = Math.min(MAX_W / w, MAX_H / h);
+                w = Math.round(w * scale);
+                h = Math.round(h * scale);
+              }
+              w = Math.max(200, w);
+              handleAddImageWithData(dataUrl, undefined, undefined, '', w, h);
+            };
+            img.onerror = () => {
+              handleAddImageWithData(dataUrl, undefined, undefined, '');
+            };
+            img.src = dataUrl;
           };
           reader.readAsDataURL(file);
           return;
@@ -406,14 +586,35 @@ export function App() {
 
         if (isImageUrl) {
           e.preventDefault();
-          handleAddImageWithData(text, undefined, undefined, 'Web image');
+          const img = new Image();
+          img.onload = () => {
+            const MAX_W = 720;
+            const MAX_H = 560;
+            let w = img.naturalWidth;
+            let h = img.naturalHeight;
+            if (w > MAX_W || h > MAX_H) {
+              const scale = Math.min(MAX_W / w, MAX_H / h);
+              w = Math.round(w * scale);
+              h = Math.round(h * scale);
+            }
+            w = Math.max(200, w);
+            handleAddImageWithData(text, undefined, undefined, '', w, h);
+          };
+          img.onerror = () => {
+            handleAddImageWithData(text, undefined, undefined, '');
+          };
+          img.src = text;
           return;
         }
 
         // Check if user copied canvas cards JSON (internal copy paste)
         try {
           const parsed = JSON.parse(text);
-          if (parsed && parsed.__milanote_copy__ && Array.isArray(parsed.elements)) {
+          if (
+            parsed &&
+            parsed.__folioboard_copy__ &&
+            Array.isArray(parsed.elements)
+          ) {
             e.preventDefault();
             const newElements: Record<string, CanvasElement> = {};
             const newSelectedIds: string[] = [];
@@ -441,12 +642,103 @@ export function App() {
             return;
           }
         } catch {}
+
+        // 3. Check if user pasted a Web Link / URL
+        if (isWebUrl(text)) {
+          e.preventDefault();
+          const meta = parseUrlMetadata(text);
+          const width = 320;
+          const height = meta.image ? 250 : 160;
+          const posX = Math.round(
+            (-state.pan.x + window.innerWidth / 2 - width / 2) / state.zoom
+          );
+          const posY = Math.round(
+            (-state.pan.y + window.innerHeight / 2 - height / 2) / state.zoom
+          );
+
+          const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          const newLinkEl: CanvasElement = {
+            id,
+            boardId: state.currentBoardId,
+            type: 'link',
+            x: posX,
+            y: posY,
+            width,
+            height,
+            zIndex: Object.keys(state.elements).length + 1,
+            color: '#ffffff',
+            data: {
+              url: meta.url,
+              title: meta.title,
+              description: meta.description,
+              domain: meta.domain,
+              favicon: meta.favicon,
+              image: meta.image || '',
+            },
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          setState((prev) => ({
+            ...prev,
+            elements: { ...prev.elements, [id]: newLinkEl },
+            selectedElementIds: [id],
+          }));
+          return;
+        }
+
+        // 4. Plain text / notes / code pasted
+        if (text.length > 0) {
+          e.preventDefault();
+          const isShort = text.length < 120 && !text.includes('\n');
+          const width = isShort
+            ? 280
+            : Math.min(460, Math.max(300, Math.round(Math.sqrt(text.length * 160))));
+          const height = isShort
+            ? 160
+            : Math.min(420, Math.max(180, Math.round(text.length * 0.75)));
+          const posX = Math.round(
+            (-state.pan.x + window.innerWidth / 2 - width / 2) / state.zoom
+          );
+          const posY = Math.round(
+            (-state.pan.y + window.innerHeight / 2 - height / 2) / state.zoom
+          );
+
+          const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          const newNoteEl: CanvasElement = {
+            id,
+            boardId: state.currentBoardId,
+            type: 'note',
+            x: posX,
+            y: posY,
+            width,
+            height,
+            zIndex: Object.keys(state.elements).length + 1,
+            color: '#ffffff',
+            data: {
+              title: '',
+              content: text,
+              fontSize: 'md',
+              fontFamily: 'sans',
+              textAlign: 'left',
+            },
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
+          };
+
+          setState((prev) => ({
+            ...prev,
+            elements: { ...prev.elements, [id]: newNoteEl },
+            selectedElementIds: [id],
+          }));
+          return;
+        }
       }
     };
 
     window.addEventListener('paste', handlePaste);
     return () => window.removeEventListener('paste', handlePaste);
-  }, [handleAddImageWithData, state.currentBoardId, state.elements]);
+  }, [handleAddImageWithData, state.currentBoardId, state.elements, state.pan, state.zoom]);
 
   // Global Clipboard Copy: Ctrl+C / Cmd+C copies selected elements
   useEffect(() => {
@@ -462,7 +754,7 @@ export function App() {
 
         if (selected.length > 0) {
           const payload = JSON.stringify({
-            __milanote_copy__: true,
+            __folioboard_copy__: true,
             elements: selected,
           });
           navigator.clipboard.writeText(payload);
@@ -495,10 +787,33 @@ export function App() {
     });
   }, []);
 
-  // Delete selected elements
-  const handleDeleteSelected = () => {
-    state.selectedElementIds.forEach((id) => handleDeleteElement(id));
-  };
+  // Delete selected elements atomically
+  const handleDeleteSelected = useCallback(() => {
+    setState((prev) => {
+      if (prev.selectedElementIds.length === 0) return prev;
+      const idsToDelete = new Set(prev.selectedElementIds);
+      const remainingElements: Record<string, CanvasElement> = {};
+      Object.values(prev.elements).forEach((el) => {
+        if (!idsToDelete.has(el.id)) {
+          remainingElements[el.id] = el;
+        }
+      });
+
+      const remainingConnections: Record<string, Connection> = {};
+      Object.values(prev.connections).forEach((conn) => {
+        if (!idsToDelete.has(conn.fromId) && !idsToDelete.has(conn.toId)) {
+          remainingConnections[conn.id] = conn;
+        }
+      });
+
+      return {
+        ...prev,
+        elements: remainingElements,
+        connections: remainingConnections,
+        selectedElementIds: [],
+      };
+    });
+  }, []);
 
   // Duplicate element
   const handleDuplicateElement = useCallback((id: string) => {
@@ -583,30 +898,38 @@ export function App() {
 
   // Reset current board
   const handleResetBoard = () => {
-    if (confirm('Are you sure you want to clear all elements from this board?')) {
-      setState((prev) => {
-        const remainingElements: Record<string, CanvasElement> = {};
-        Object.values(prev.elements).forEach((el) => {
-          if (el.boardId !== prev.currentBoardId) {
-            remainingElements[el.id] = el;
-          }
-        });
+    showAppDialog({
+      type: 'danger',
+      title: 'Clear Current Board',
+      message:
+        'Are you sure you want to clear all cards, notes, and connections from this board? This action cannot be undone.',
+      confirmLabel: 'Clear All Elements',
+      cancelLabel: 'Cancel',
+      onConfirm: () => {
+        setState((prev) => {
+          const remainingElements: Record<string, CanvasElement> = {};
+          Object.values(prev.elements).forEach((el) => {
+            if (el.boardId !== prev.currentBoardId) {
+              remainingElements[el.id] = el;
+            }
+          });
 
-        const remainingConnections: Record<string, Connection> = {};
-        Object.values(prev.connections).forEach((conn) => {
-          if (conn.boardId !== prev.currentBoardId) {
-            remainingConnections[conn.id] = conn;
-          }
-        });
+          const remainingConnections: Record<string, Connection> = {};
+          Object.values(prev.connections).forEach((conn) => {
+            if (conn.boardId !== prev.currentBoardId) {
+              remainingConnections[conn.id] = conn;
+            }
+          });
 
-        return {
-          ...prev,
-          elements: remainingElements,
-          connections: remainingConnections,
-          selectedElementIds: [],
-        };
-      });
-    }
+          return {
+            ...prev,
+            elements: remainingElements,
+            connections: remainingConnections,
+            selectedElementIds: [],
+          };
+        });
+      },
+    });
   };
 
   // Load pre-configured template
@@ -714,7 +1037,7 @@ export function App() {
       .filter(Boolean);
     if (selected.length > 0) {
       const payload = JSON.stringify({
-        __milanote_copy__: true,
+        __folioboard_copy__: true,
         elements: selected,
       });
       navigator.clipboard.writeText(payload);
@@ -838,6 +1161,7 @@ export function App() {
           activeTool={activeTool}
           onToolChange={setActiveTool}
           onAddElement={handleAddElementFromSidebar}
+          onOpenUpload={handleOpenUpload}
           onOpenTemplates={() => setIsTemplatesOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
           onDeleteSelected={handleDeleteSelected}
@@ -849,7 +1173,13 @@ export function App() {
                 fromAnchor: 'right',
               });
             } else {
-              alert('Select a card first to start drawing a connection line!');
+              showAppDialog({
+                type: 'info',
+                title: 'Select a Card First',
+                message:
+                  'Select any card or note on the canvas first to start drawing a connection line.',
+                confirmLabel: 'Got it',
+              });
             }
           }}
         />
@@ -904,7 +1234,23 @@ export function App() {
         onLoadTemplate={handleLoadTemplate}
       />
 
+      <UploadModal
+        key={isUploadOpen ? `upload_${uploadDefaultTab}` : 'upload_closed'}
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        defaultTab={uploadDefaultTab}
+        onUploadMedia={handleUploadMedia}
+        onUploadFiles={handleUploadFiles}
+      />
+
       <HelpModal isOpen={isHelpOpen} onClose={() => setIsHelpOpen(false)} />
+
+      {/* Global In-App Dialog / Alerts */}
+      <AppDialog
+        isOpen={isDialogOpen}
+        options={dialogOptions}
+        onClose={() => setIsDialogOpen(false)}
+      />
     </div>
   );
 }

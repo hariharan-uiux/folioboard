@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Connection, CanvasElement, AnchorPosition } from '../types/milanote';
+import type { Connection, CanvasElement, AnchorPosition } from '../types/folioboard';
 import { X } from 'lucide-react';
 
 interface ConnectionLinesProps {

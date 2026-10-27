@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import type { CanvasElement, Board } from '../types/milanote';
+import type { CanvasElement, Board } from '../types/folioboard';
 import { DuotoneIcon } from './DuotoneIcon';
 import {
   Search,
@@ -88,7 +88,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-start justify-center pt-24 p-4"
+      className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4"
       onClick={onClose}
     >
       <div
@@ -109,7 +109,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
           {query && (
             <button
               onClick={() => setQuery('')}
-              className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded"
+              className="p-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200 rounded-lg"
             >
               <X className="w-4 h-4" />
             </button>
@@ -155,7 +155,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                   className="flex items-center gap-3 p-2.5 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 rounded-xl cursor-pointer transition-colors group"
                 >
                   <div
-                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200 dark:border-neutral-700"
+                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border border-neutral-200 dark:border-neutral-700"
                     style={{ backgroundColor: el.color || '#f8f9fa' }}
                   >
                     <DuotoneIcon icon={Icon} className="w-4 h-4 text-neutral-700 dark:text-neutral-900" />

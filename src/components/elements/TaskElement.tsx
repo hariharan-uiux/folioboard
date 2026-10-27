@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CanvasElement, TaskItem } from '../../types/milanote';
+import type { CanvasElement, TaskItem } from '../../types/folioboard';
 import { DuotoneIcon } from '../DuotoneIcon';
 import { CheckSquare, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
@@ -140,7 +140,7 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
         {items.map((item) => (
           <div
             key={item.id}
-            className="flex items-start gap-2 group/item text-xs py-0.5 rounded transition-colors"
+            className="flex items-start gap-2 group/item text-xs py-0.5 rounded-lg transition-colors"
           >
             <button
               onClick={() => handleToggleItem(item.id)}
@@ -150,7 +150,7 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 fill-emerald-100 dark:fill-emerald-950" />
               ) : (
                 <div
-                  className={`w-3.5 h-3.5 rounded border ${
+                  className={`w-3.5 h-3.5 rounded-md border ${
                     isExplicitPastel
                       ? 'border-neutral-400'
                       : 'border-neutral-300 dark:border-neutral-600 hover:border-neutral-500'
@@ -198,7 +198,7 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
         <button
           onClick={handleAddItem}
           disabled={!newText.trim()}
-          className="p-1 rounded bg-black/5 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/20 disabled:opacity-30 text-neutral-700 dark:text-neutral-200 transition-colors"
+          className="p-1 rounded-lg bg-black/5 dark:bg-white/10 hover:bg-black/15 dark:hover:bg-white/20 disabled:opacity-30 text-neutral-700 dark:text-neutral-200 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>

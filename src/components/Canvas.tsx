@@ -4,7 +4,7 @@ import type {
   Connection,
   ElementType,
   AnchorPosition,
-} from '../types/milanote';
+} from '../types/folioboard';
 import { ConnectionLines } from './ConnectionLines';
 import { FloatingToolbar } from './FloatingToolbar';
 import { NoteElement } from './elements/NoteElement';
@@ -16,8 +16,10 @@ import { ColumnElement } from './elements/ColumnElement';
 import { ColorElement } from './elements/ColorElement';
 import { SketchElement } from './elements/SketchElement';
 import { FileElement } from './elements/FileElement';
+import { ContextMenu } from './ContextMenu';
 import { DuotoneIcon } from './DuotoneIcon';
-import { Plus, Minus, Maximize, ZoomIn } from 'lucide-react';
+import { Plus, Minus, Maximize, ZoomIn, Lock } from 'lucide-react';
+import { isWebUrl, parseUrlMetadata } from '../utils/urlHelper';
 
 interface CanvasProps {
   currentBoardId: string;
@@ -36,8 +38,22 @@ interface CanvasProps {
   onUpdateElement: (id: string, updates: Partial<CanvasElement>) => void;
   onDeleteElement: (id: string) => void;
   onDuplicateElement: (id: string) => void;
-  onAddElementAtCoords: (type: ElementType, x: number, y: number) => void;
-  onAddImageWithData: (dataUrl: string, x: number, y: number, name?: string) => void;
+  onAddElementAtCoords: (
+    type: ElementType,
+    x: number,
+    y: number,
+    customData?: any,
+    customW?: number,
+    customH?: number
+  ) => void;
+  onAddImageWithData: (
+    dataUrl: string,
+    x: number,
+    y: number,
+    name?: string,
+    customW?: number,
+    customH?: number
+  ) => void;
   onNavigateBoard: (boardId: string) => void;
   onAddConnection: (
     fromId: string,
@@ -106,6 +122,9 @@ export const Canvas: React.FC<CanvasProps> = ({
     height: number;
     mouseX: number;
     mouseY: number;
+    x?: number;
+    y?: number;
+    handle?: 'se' | 'sw' | 'ne' | 'nw';
   }>({ width: 0, height: 0, mouseX: 0, mouseY: 0 });
 
   // Live connecting line tracking
@@ -118,6 +137,13 @@ export const Canvas: React.FC<CanvasProps> = ({
   const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false);
   const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
   const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null);
+
+  // Right-Click Context Menu State
+  const [contextMenu, setContextMenu] = useState<{
+    x: number;
+    y: number;
+    elementId: string;
+  } | null>(null);
 
   // Spacebar keyboard listener
   useEffect(() => {
@@ -222,6 +248,14 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   // Canvas background pointer down
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement)?.closest?.('[role="menu"]')) {
+      return;
+    }
+
+    if (contextMenu) {
+      setContextMenu(null);
+    }
+
     // If Space is held, middle-click, altKey, or Hand tool mode -> PAN canvas
     if (e.button === 1 || e.altKey || isSpacePressed || activeTool === 'hand') {
       setIsPanning(true);
@@ -296,14 +330,90 @@ export const Canvas: React.FC<CanvasProps> = ({
         }
       }
     } else if (resizingId && elements[resizingId]) {
+      const el = elements[resizingId];
       const deltaX = (e.clientX - resizeStart.mouseX) / zoom;
       const deltaY = (e.clientY - resizeStart.mouseY) / zoom;
-      const newWidth = Math.max(160, snapValue(resizeStart.width + deltaX));
-      const newHeight = Math.max(90, snapValue(resizeStart.height + deltaY));
+      const handle = resizeStart.handle || 'se';
+      const isImage = el.type === 'image';
+      const aspectRatio = resizeStart.width / Math.max(1, resizeStart.height);
+
+      let newWidth = resizeStart.width;
+      let newHeight = resizeStart.height;
+      let newX = resizeStart.x ?? el.x;
+      let newY = resizeStart.y ?? el.y;
+
+      if (isImage) {
+        // For images, preserve aspect ratio proportionally
+        if (e.shiftKey) {
+          // Freeform if Shift held
+          if (handle === 'se') {
+            newWidth = Math.max(100, snapValue(resizeStart.width + deltaX));
+            newHeight = Math.max(80, snapValue(resizeStart.height + deltaY));
+          } else if (handle === 'sw') {
+            newWidth = Math.max(100, snapValue(resizeStart.width - deltaX));
+            newHeight = Math.max(80, snapValue(resizeStart.height + deltaY));
+            newX = snapValue((resizeStart.x ?? el.x) + (resizeStart.width - newWidth));
+          } else if (handle === 'ne') {
+            newWidth = Math.max(100, snapValue(resizeStart.width + deltaX));
+            newHeight = Math.max(80, snapValue(resizeStart.height - deltaY));
+            newY = snapValue((resizeStart.y ?? el.y) + (resizeStart.height - newHeight));
+          } else if (handle === 'nw') {
+            newWidth = Math.max(100, snapValue(resizeStart.width - deltaX));
+            newHeight = Math.max(80, snapValue(resizeStart.height - deltaY));
+            newX = snapValue((resizeStart.x ?? el.x) + (resizeStart.width - newWidth));
+            newY = snapValue((resizeStart.y ?? el.y) + (resizeStart.height - newHeight));
+          }
+        } else {
+          // Proportional scaling
+          let d = 0;
+          if (handle === 'se') {
+            d = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY * aspectRatio;
+            newWidth = Math.max(100, Math.round(resizeStart.width + d));
+            newHeight = Math.max(80, Math.round(newWidth / aspectRatio));
+          } else if (handle === 'sw') {
+            d = Math.abs(deltaX) > Math.abs(deltaY) ? -deltaX : deltaY * aspectRatio;
+            newWidth = Math.max(100, Math.round(resizeStart.width + d));
+            newHeight = Math.max(80, Math.round(newWidth / aspectRatio));
+            newX = (resizeStart.x ?? el.x) + (resizeStart.width - newWidth);
+          } else if (handle === 'ne') {
+            d = Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : -deltaY * aspectRatio;
+            newWidth = Math.max(100, Math.round(resizeStart.width + d));
+            newHeight = Math.max(80, Math.round(newWidth / aspectRatio));
+            newY = (resizeStart.y ?? el.y) + (resizeStart.height - newHeight);
+          } else if (handle === 'nw') {
+            d = Math.abs(deltaX) > Math.abs(deltaY) ? -deltaX : -deltaY * aspectRatio;
+            newWidth = Math.max(100, Math.round(resizeStart.width + d));
+            newHeight = Math.max(80, Math.round(newWidth / aspectRatio));
+            newX = (resizeStart.x ?? el.x) + (resizeStart.width - newWidth);
+            newY = (resizeStart.y ?? el.y) + (resizeStart.height - newHeight);
+          }
+        }
+      } else {
+        // Standard elements
+        if (handle === 'se') {
+          newWidth = Math.max(160, snapValue(resizeStart.width + deltaX));
+          newHeight = Math.max(90, snapValue(resizeStart.height + deltaY));
+        } else if (handle === 'sw') {
+          newWidth = Math.max(160, snapValue(resizeStart.width - deltaX));
+          newHeight = Math.max(90, snapValue(resizeStart.height + deltaY));
+          newX = snapValue((resizeStart.x ?? el.x) + (resizeStart.width - newWidth));
+        } else if (handle === 'ne') {
+          newWidth = Math.max(160, snapValue(resizeStart.width + deltaX));
+          newHeight = Math.max(90, snapValue(resizeStart.height - deltaY));
+          newY = snapValue((resizeStart.y ?? el.y) + (resizeStart.height - newHeight));
+        } else if (handle === 'nw') {
+          newWidth = Math.max(160, snapValue(resizeStart.width - deltaX));
+          newHeight = Math.max(90, snapValue(resizeStart.height - deltaY));
+          newX = snapValue((resizeStart.x ?? el.x) + (resizeStart.width - newWidth));
+          newY = snapValue((resizeStart.y ?? el.y) + (resizeStart.height - newHeight));
+        }
+      }
 
       onUpdateElement(resizingId, {
         width: newWidth,
         height: newHeight,
+        x: newX,
+        y: newY,
       });
     }
   };
@@ -350,6 +460,15 @@ export const Canvas: React.FC<CanvasProps> = ({
   ) => {
     e.stopPropagation();
 
+    // Right-click handled by onContextMenu
+    if (e.button === 2) {
+      return;
+    }
+
+    if (contextMenu) {
+      setContextMenu(null);
+    }
+
     // If Hand tool or space is active, treat as pan
     if (isSpacePressed || activeTool === 'hand' || e.button === 1) {
       setIsPanning(true);
@@ -369,6 +488,11 @@ export const Canvas: React.FC<CanvasProps> = ({
       }
     }
 
+    // Locked elements cannot be dragged
+    if (el.locked) {
+      return;
+    }
+
     const coords = clientToCanvas(e.clientX, e.clientY);
     setDragCandidate({
       id: el.id,
@@ -377,6 +501,181 @@ export const Canvas: React.FC<CanvasProps> = ({
       clientStartX: e.clientX,
       clientStartY: e.clientY,
     });
+  };
+
+  // Right-Click Context Menu Trigger on Canvas Elements
+  const handleElementContextMenu = (e: React.MouseEvent, el: CanvasElement) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!selectedElementIds.includes(el.id)) {
+      onSelectElements([el.id]);
+    }
+
+    setContextMenu({
+      x: e.clientX,
+      y: e.clientY,
+      elementId: el.id,
+    });
+  };
+
+  // Context Menu Actions
+  const handleContextMenuCut = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      const payload = JSON.stringify({
+        __folioboard_copy__: true,
+        elements: [el],
+      });
+      navigator.clipboard.writeText(payload);
+      onDeleteElement(el.id);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuCopy = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      const payload = JSON.stringify({
+        __folioboard_copy__: true,
+        elements: [el],
+      });
+      navigator.clipboard.writeText(payload);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuDuplicate = () => {
+    if (!contextMenu) return;
+    onDuplicateElement(contextMenu.elementId);
+    setContextMenu(null);
+  };
+
+  const handleContextMenuDelete = () => {
+    if (!contextMenu) return;
+    const targetId = contextMenu.elementId;
+    if (selectedElementIds.includes(targetId) && selectedElementIds.length > 1) {
+      selectedElementIds.forEach((id) => onDeleteElement(id));
+    } else {
+      onDeleteElement(targetId);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuDownloadOriginal = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el && el.data?.url) {
+      const url = el.data.url;
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = el.data.caption || 'image.png';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuReplaceImage = () => {
+    if (!contextMenu) return;
+    const elId = contextMenu.elementId;
+    const el = elements[elId];
+    if (!el) return;
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const dataUrl = ev.target?.result as string;
+          const img = new Image();
+          img.onload = () => {
+            onUpdateElement(elId, {
+              data: {
+                ...el.data,
+                url: dataUrl,
+                caption: file.name.replace(/\.[^/.]+$/, ''),
+                exactSizeApplied: true,
+                naturalWidth: img.naturalWidth,
+                naturalHeight: img.naturalHeight,
+              },
+              updatedAt: Date.now(),
+            });
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    input.click();
+    setContextMenu(null);
+  };
+
+  const handleContextMenuToggleCropToGrid = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      const current = el.data?.cropToGrid !== false;
+      onUpdateElement(el.id, {
+        data: {
+          ...el.data,
+          cropToGrid: !current,
+        },
+        updatedAt: Date.now(),
+      });
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuToggleLock = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      onUpdateElement(el.id, {
+        locked: !el.locked,
+        updatedAt: Date.now(),
+      });
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuBringToFront = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      const maxZ = boardElements.reduce(
+        (max, item) => Math.max(max, item.zIndex || 1),
+        1
+      );
+      onUpdateElement(el.id, {
+        zIndex: maxZ + 1,
+        updatedAt: Date.now(),
+      });
+    }
+    setContextMenu(null);
+  };
+
+  const handleContextMenuSendToBack = () => {
+    if (!contextMenu) return;
+    const el = elements[contextMenu.elementId];
+    if (el) {
+      const minZ = boardElements.reduce(
+        (min, item) => Math.min(min, item.zIndex || 1),
+        1
+      );
+      onUpdateElement(el.id, {
+        zIndex: Math.max(0, minZ - 1),
+        updatedAt: Date.now(),
+      });
+    }
+    setContextMenu(null);
   };
 
   // Anchor click / connect handling
@@ -406,26 +705,244 @@ export const Canvas: React.FC<CanvasProps> = ({
     e.preventDefault();
     const coords = clientToCanvas(e.clientX, e.clientY);
 
-    // 1. Check for files dropped from OS (e.g. image files)
+    // 1. Check for files dropped from OS (e.g. image files, videos, documents)
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
       if (file.type.startsWith('image/')) {
         const reader = new FileReader();
         reader.onload = (event) => {
           const dataUrl = event.target?.result as string;
-          onAddImageWithData(dataUrl, snapValue(coords.x - 160), snapValue(coords.y - 140), file.name);
+          const img = new Image();
+          img.onload = () => {
+            const MAX_W = 720;
+            const MAX_H = 560;
+            let w = img.naturalWidth;
+            let h = img.naturalHeight;
+            if (w > MAX_W || h > MAX_H) {
+              const scale = Math.min(MAX_W / w, MAX_H / h);
+              w = Math.round(w * scale);
+              h = Math.round(h * scale);
+            }
+            w = Math.max(200, w);
+            onAddImageWithData(
+              dataUrl,
+              snapValue(coords.x - w / 2),
+              snapValue(coords.y - h / 2),
+              file.name,
+              w,
+              h
+            );
+          };
+          img.onerror = () => {
+            onAddImageWithData(
+              dataUrl,
+              snapValue(coords.x - 160),
+              snapValue(coords.y - 140),
+              file.name
+            );
+          };
+          img.src = dataUrl;
+        };
+        reader.readAsDataURL(file);
+        return;
+      } else if (file.type.startsWith('video/') || /\.(mp4|webm|mov|ogg)$/i.test(file.name)) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          onAddElementAtCoords(
+            'image',
+            snapValue(coords.x - 180),
+            snapValue(coords.y - 130),
+            {
+              url: dataUrl,
+              caption: file.name.replace(/\.[^/.]+$/, ''),
+              isVideo: true,
+              exactSizeApplied: true,
+            },
+            380,
+            260
+          );
+        };
+        reader.readAsDataURL(file);
+        return;
+      } else {
+        // Document / other file
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          const sizeStr =
+            file.size > 1024 * 1024
+              ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+              : `${Math.round(file.size / 1024)} KB`;
+          const ext = file.name.split('.').pop()?.toUpperCase() || 'FILE';
+          onAddElementAtCoords(
+            'file',
+            snapValue(coords.x - 150),
+            snapValue(coords.y - 45),
+            {
+              fileName: file.name,
+              fileSize: sizeStr,
+              fileType: ext,
+              downloadUrl: dataUrl,
+            },
+            300,
+            86
+          );
         };
         reader.readAsDataURL(file);
         return;
       }
     }
 
-    // 2. Check for sidebar tools
-    const type = e.dataTransfer.getData('application/milanote-type') as ElementType;
+    // 2. Check for web image dragged directly from another website/tab
+    const uri = e.dataTransfer.getData('text/uri-list') || e.dataTransfer.getData('text/plain');
+    if (
+      uri &&
+      (/\.(png|jpe?g|gif|webp|svg|avif)(\?.*)?$/i.test(uri) ||
+        /(images\.unsplash\.com|i\.imgur\.com|media\.giphy\.com)/i.test(uri))
+    ) {
+      const img = new Image();
+      img.onload = () => {
+        const MAX_W = 720;
+        const MAX_H = 560;
+        let w = img.naturalWidth;
+        let h = img.naturalHeight;
+        if (w > MAX_W || h > MAX_H) {
+          const scale = Math.min(MAX_W / w, MAX_H / h);
+          w = Math.round(w * scale);
+          h = Math.round(h * scale);
+        }
+        w = Math.max(200, w);
+        onAddImageWithData(
+          uri,
+          snapValue(coords.x - w / 2),
+          snapValue(coords.y - h / 2),
+          '',
+          w,
+          h
+        );
+      };
+      img.onerror = () => {
+        onAddImageWithData(
+          uri,
+          snapValue(coords.x - 160),
+          snapValue(coords.y - 140),
+          ''
+        );
+      };
+      img.src = uri;
+      return;
+    }
+
+    // 3. Check for sidebar tools
+    const type = (e.dataTransfer.getData('application/folioboard-type') ||
+      e.dataTransfer.getData('application/folioboard-type')) as ElementType | 'upload';
+    if (type === 'upload') {
+      onAddElementAtCoords(
+        'image',
+        snapValue(coords.x - 160),
+        snapValue(coords.y - 140),
+        { url: '', caption: '' },
+        320,
+        280
+      );
+      return;
+    }
     if (type) {
       onAddElementAtCoords(type, snapValue(coords.x - 140), snapValue(coords.y - 80));
+      return;
+    }
+
+    // 4. Check for dropped web URLs
+    if (uri && isWebUrl(uri)) {
+      const meta = parseUrlMetadata(uri);
+      onAddElementAtCoords(
+        'link',
+        snapValue(coords.x - 160),
+        snapValue(coords.y - 80),
+        {
+          url: meta.url,
+          title: meta.title,
+          description: meta.description,
+          domain: meta.domain,
+          favicon: meta.favicon,
+          image: meta.image || '',
+        },
+        320,
+        meta.image ? 250 : 160
+      );
+      return;
+    }
+
+    // 5. Check for dropped plain text
+    const plainText = e.dataTransfer.getData('text/plain')?.trim();
+    if (plainText && plainText.length > 0) {
+      if (isWebUrl(plainText)) {
+        const meta = parseUrlMetadata(plainText);
+        onAddElementAtCoords(
+          'link',
+          snapValue(coords.x - 160),
+          snapValue(coords.y - 80),
+          {
+            url: meta.url,
+            title: meta.title,
+            description: meta.description,
+            domain: meta.domain,
+            favicon: meta.favicon,
+            image: meta.image || '',
+          },
+          320,
+          meta.image ? 250 : 160
+        );
+        return;
+      }
+
+      onAddElementAtCoords(
+        'note',
+        snapValue(coords.x - 140),
+        snapValue(coords.y - 90),
+        {
+          title: '',
+          content: plainText,
+          fontSize: 'md',
+          fontFamily: 'sans',
+          textAlign: 'left',
+        },
+        280,
+        180
+      );
     }
   };
+
+  const handleMouseMoveRef = useRef(handleMouseMove);
+  const handleMouseUpRef = useRef(handleMouseUp);
+
+  useEffect(() => {
+    handleMouseMoveRef.current = handleMouseMove;
+    handleMouseUpRef.current = handleMouseUp;
+  });
+
+  // Window pointer listeners during active drag / pan / resize / marquee
+  useEffect(() => {
+    if (!isPanning && !isMarqueeSelecting && !dragCandidate && !draggingElementId && !resizingId) {
+      return;
+    }
+
+    const onWindowMouseMove = (e: MouseEvent) => {
+      handleMouseMoveRef.current(e as unknown as React.MouseEvent);
+    };
+
+    const onWindowMouseUp = () => {
+      handleMouseUpRef.current();
+    };
+
+    window.addEventListener('mousemove', onWindowMouseMove);
+    window.addEventListener('mouseup', onWindowMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', onWindowMouseMove);
+      window.removeEventListener('mouseup', onWindowMouseUp);
+    };
+  }, [isPanning, isMarqueeSelecting, dragCandidate, draggingElementId, resizingId]);
 
   // Global keydown (Delete, Duplicate)
   useEffect(() => {
@@ -456,6 +973,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   );
 
   const getCanvasCursor = () => {
+    if (draggingElementId) return 'grabbing';
     if (isPanning) return 'grabbing';
     if (isSpacePressed || activeTool === 'hand') return 'grab';
     if (isMarqueeSelecting) return 'crosshair';
@@ -470,6 +988,10 @@ export const Canvas: React.FC<CanvasProps> = ({
       onMouseUp={handleMouseUp}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        setContextMenu(null);
+      }}
       style={{ cursor: getCanvasCursor() }}
       className={`relative flex-1 w-full h-full overflow-hidden select-none transition-colors ${
         gridVisible
@@ -511,7 +1033,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         {/* Marquee Selection Box */}
         {isMarqueeSelecting && marqueeStart && marqueeEnd && (
           <div
-            className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none rounded z-40"
+            className="absolute border border-blue-500 bg-blue-500/10 pointer-events-none rounded-lg z-40"
             style={{
               left: Math.min(marqueeStart.x, marqueeEnd.x),
               top: Math.min(marqueeStart.y, marqueeEnd.y),
@@ -524,6 +1046,9 @@ export const Canvas: React.FC<CanvasProps> = ({
         {/* Render Canvas Elements */}
         {boardElements.map((el) => {
           const isSelected = selectedElementIds.includes(el.id);
+          const isDragging =
+            draggingElementId === el.id ||
+            (Boolean(draggingElementId) && isSelected);
           const computedBg = getCardBg(el.color);
 
           return (
@@ -531,21 +1056,38 @@ export const Canvas: React.FC<CanvasProps> = ({
               key={el.id}
               id={`el-${el.id}`}
               onMouseDown={(e) => handleElementMouseDown(e, el)}
-              className={`absolute rounded-xl transition-shadow group/card border border-neutral-200/60 dark:border-neutral-700/80 ${
-                isSelected
-                  ? 'ring-2 ring-blue-500 shadow-xl'
-                  : 'shadow-xs hover:shadow-md'
+              onContextMenu={(e) => handleElementContextMenu(e, el)}
+              className={`absolute rounded-xl select-none group/card ${
+                el.type === 'column'
+                  ? 'border-2 border-dashed border-neutral-300 dark:border-neutral-700/90 bg-neutral-100/60 dark:bg-[#18191c]/70'
+                  : 'border border-neutral-200/90 dark:border-neutral-700/80'
+              } ${
+                isDragging
+                  ? 'ring-2 ring-blue-500 shadow-2xl shadow-blue-500/20 dark:shadow-blue-500/30 opacity-95 cursor-grabbing z-50'
+                  : isSelected
+                  ? 'ring-2 ring-blue-500 shadow-xl cursor-grab'
+                  : el.type === 'column'
+                  ? ''
+                  : 'shadow-xs hover:shadow-md hover:border-neutral-300 dark:hover:border-neutral-600 cursor-grab'
               }`}
               style={{
-                transform: `translate(${el.x}px, ${el.y}px)`,
+                transform: `translate(${el.x}px, ${el.y}px)${
+                  isDragging
+                    ? ' scale(1.025) rotate(-0.5deg)'
+                    : ' scale(1) rotate(0deg)'
+                }`,
                 width: `${el.width}px`,
                 height: `${el.height}px`,
-                backgroundColor: computedBg,
-                zIndex: isSelected ? 30 : el.zIndex || 1,
+                backgroundColor: el.type === 'column' ? undefined : computedBg,
+                zIndex: isDragging ? 50 : isSelected ? 30 : el.zIndex || 1,
+                willChange: 'transform',
+                transition: isDragging
+                  ? 'box-shadow 0.15s ease, opacity 0.15s ease'
+                  : 'transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, opacity 0.2s ease',
               }}
             >
               {/* Floating Toolbar above selected element */}
-              {isSelected && selectedElementIds.length === 1 && (
+              {isSelected && !draggingElementId && selectedElementIds.length === 1 && (
                 <FloatingToolbar
                   element={el}
                   zoom={zoom}
@@ -638,43 +1180,133 @@ export const Canvas: React.FC<CanvasProps> = ({
               </div>
 
               {/* 4 Connection Anchors (top, right, bottom, left) on hover */}
-              <button
-                onMouseDown={(e) => handleAnchorMouseDown(e, el, 'top')}
-                className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
-                title="Connect from Top"
-              />
-              <button
-                onMouseDown={(e) => handleAnchorMouseDown(e, el, 'right')}
-                className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
-                title="Connect from Right"
-              />
-              <button
-                onMouseDown={(e) => handleAnchorMouseDown(e, el, 'bottom')}
-                className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
-                title="Connect from Bottom"
-              />
-              <button
-                onMouseDown={(e) => handleAnchorMouseDown(e, el, 'left')}
-                className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
-                title="Connect from Left"
-              />
+              {!draggingElementId && (
+                <>
+                  <button
+                    onMouseDown={(e) => handleAnchorMouseDown(e, el, 'top')}
+                    className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                    title="Connect from Top"
+                  />
+                  <button
+                    onMouseDown={(e) => handleAnchorMouseDown(e, el, 'right')}
+                    className="absolute -right-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                    title="Connect from Right"
+                  />
+                  <button
+                    onMouseDown={(e) => handleAnchorMouseDown(e, el, 'bottom')}
+                    className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                    title="Connect from Bottom"
+                  />
+                  <button
+                    onMouseDown={(e) => handleAnchorMouseDown(e, el, 'left')}
+                    className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white dark:bg-neutral-800 border-2 border-neutral-400 dark:border-neutral-500 opacity-0 group-hover/card:opacity-100 hover:border-blue-500 dark:hover:border-blue-400 hover:scale-125 transition-all z-20 cursor-crosshair shadow-2xs"
+                    title="Connect from Left"
+                  />
+                </>
+              )}
 
-              {/* Resize Handle (Bottom-Right corner) */}
-              {isSelected && (
+              {/* Lock Indicator Badge */}
+              {el.locked && (
                 <div
-                  onMouseDown={(e) => {
+                  className="absolute top-2 right-2 p-1 rounded-md bg-black/60 backdrop-blur-xs text-white/90 z-20 pointer-events-auto cursor-pointer hover:bg-black/80 transition-colors"
+                  title="Locked position (Right-click to unlock)"
+                  onClick={(e) => {
                     e.stopPropagation();
-                    setResizingId(el.id);
-                    setResizeStart({
-                      width: el.width,
-                      height: el.height,
-                      mouseX: e.clientX,
-                      mouseY: e.clientY,
-                    });
+                    onUpdateElement(el.id, { locked: false, updatedAt: Date.now() });
                   }}
-                  className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-blue-500 rounded-sm cursor-se-resize shadow-xs hover:scale-125 transition-transform z-30"
-                  title="Drag to resize card"
-                />
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                </div>
+              )}
+
+              {/* 4 Corner Resize Handles */}
+              {(isSelected || el.type === 'image') && !el.locked && !draggingElementId && (
+                <>
+                  {/* Top-Left (NW) */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      if (!selectedElementIds.includes(el.id)) onSelectElements([el.id]);
+                      setResizingId(el.id);
+                      setResizeStart({
+                        width: el.width,
+                        height: el.height,
+                        mouseX: e.clientX,
+                        mouseY: e.clientY,
+                        x: el.x,
+                        y: el.y,
+                        handle: 'nw',
+                      });
+                    }}
+                    className={`absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-xs cursor-nwse-resize shadow-xs hover:scale-125 transition-transform z-30 ${
+                      isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'
+                    }`}
+                    title="Drag corner to resize"
+                  />
+                  {/* Top-Right (NE) */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      if (!selectedElementIds.includes(el.id)) onSelectElements([el.id]);
+                      setResizingId(el.id);
+                      setResizeStart({
+                        width: el.width,
+                        height: el.height,
+                        mouseX: e.clientX,
+                        mouseY: e.clientY,
+                        x: el.x,
+                        y: el.y,
+                        handle: 'ne',
+                      });
+                    }}
+                    className={`absolute -top-1.5 -right-1.5 w-3.5 h-3.5 bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-xs cursor-nesw-resize shadow-xs hover:scale-125 transition-transform z-30 ${
+                      isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'
+                    }`}
+                    title="Drag corner to resize"
+                  />
+                  {/* Bottom-Left (SW) */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      if (!selectedElementIds.includes(el.id)) onSelectElements([el.id]);
+                      setResizingId(el.id);
+                      setResizeStart({
+                        width: el.width,
+                        height: el.height,
+                        mouseX: e.clientX,
+                        mouseY: e.clientY,
+                        x: el.x,
+                        y: el.y,
+                        handle: 'sw',
+                      });
+                    }}
+                    className={`absolute -bottom-1.5 -left-1.5 w-3.5 h-3.5 bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-xs cursor-nesw-resize shadow-xs hover:scale-125 transition-transform z-30 ${
+                      isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'
+                    }`}
+                    title="Drag corner to resize"
+                  />
+                  {/* Bottom-Right (SE) */}
+                  <div
+                    onMouseDown={(e) => {
+                      e.stopPropagation();
+                      if (!selectedElementIds.includes(el.id)) onSelectElements([el.id]);
+                      setResizingId(el.id);
+                      setResizeStart({
+                        width: el.width,
+                        height: el.height,
+                        mouseX: e.clientX,
+                        mouseY: e.clientY,
+                        x: el.x,
+                        y: el.y,
+                        handle: 'se',
+                      });
+                    }}
+                    className={`absolute -bottom-1.5 -right-1.5 w-3.5 h-3.5 bg-white dark:bg-neutral-900 border-2 border-blue-500 rounded-xs cursor-nwse-resize shadow-xs hover:scale-125 transition-transform z-30 ${
+                      isSelected ? 'opacity-100' : 'opacity-0 group-hover/card:opacity-100'
+                    }`}
+                    title="Drag corner to resize"
+                  />
+                </>
               )}
             </div>
           );
@@ -696,7 +1328,7 @@ export const Canvas: React.FC<CanvasProps> = ({
             onZoomChange(1.0);
             onPanChange({ x: 40, y: 40 });
           }}
-          className="px-2 py-1 text-xs font-medium font-mono text-neutral-700 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-md transition-colors"
+          className="px-2 py-1 text-xs font-medium font-mono text-neutral-700 dark:text-neutral-200 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors"
           title="Reset zoom to 100%"
         >
           {Math.round(zoom * 100)}%
@@ -751,6 +1383,26 @@ export const Canvas: React.FC<CanvasProps> = ({
             </button>
           </div>
         </div>
+      )}
+
+      {/* Right-Click Context Menu */}
+      {contextMenu && elements[contextMenu.elementId] && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          element={elements[contextMenu.elementId]}
+          onClose={() => setContextMenu(null)}
+          onCut={handleContextMenuCut}
+          onCopy={handleContextMenuCopy}
+          onDuplicate={handleContextMenuDuplicate}
+          onDelete={handleContextMenuDelete}
+          onDownloadOriginal={handleContextMenuDownloadOriginal}
+          onReplaceImage={handleContextMenuReplaceImage}
+          onToggleCropToGrid={handleContextMenuToggleCropToGrid}
+          onToggleLock={handleContextMenuToggleLock}
+          onBringToFront={handleContextMenuBringToFront}
+          onSendToBack={handleContextMenuSendToBack}
+        />
       )}
     </div>
   );

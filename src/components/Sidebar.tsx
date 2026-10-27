@@ -1,28 +1,29 @@
 import React from 'react';
-import type { ElementType } from '../types/milanote';
+import type { ElementType } from '../types/folioboard';
 import { DuotoneIcon } from './DuotoneIcon';
 import {
   MousePointer2,
   Hand,
   FileText,
-  Image as ImageIcon,
+  UploadCloud,
   Link as LinkIcon,
   CheckSquare,
   FolderPlus,
   Columns3,
   Palette,
   PenTool,
-  Paperclip,
   LayoutTemplate,
   Trash2,
   HelpCircle,
   GitBranch,
+  Layers,
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTool: 'select' | 'hand';
   onToolChange: (tool: 'select' | 'hand') => void;
   onAddElement: (type: ElementType) => void;
+  onOpenUpload?: (tab?: 'media' | 'file') => void;
   onOpenTemplates: () => void;
   onOpenHelp: () => void;
   onDeleteSelected: () => void;
@@ -31,51 +32,61 @@ interface SidebarProps {
 }
 
 const TOOL_ITEMS: {
-  type: ElementType;
+  type: ElementType | 'upload';
   label: string;
   icon: any;
   description: string;
 }[] = [
   { type: 'note', label: 'Note', icon: FileText, description: 'Text & notes' },
-  { type: 'image', label: 'Image', icon: ImageIcon, description: 'Photos & visual refs' },
+  { type: 'upload', label: 'Upload', icon: UploadCloud, description: 'Upload images, videos & files' },
   { type: 'link', label: 'Link', icon: LinkIcon, description: 'Web bookmarks' },
   { type: 'task', label: 'To-do', icon: CheckSquare, description: 'Checklist with progress' },
   { type: 'board', label: 'Board', icon: FolderPlus, description: 'Sub-board folder' },
   { type: 'column', label: 'Column', icon: Columns3, description: 'Card column group' },
   { type: 'color', label: 'Color', icon: Palette, description: 'Color swatch tile' },
   { type: 'sketch', label: 'Sketch', icon: PenTool, description: 'Freehand doodle' },
-  { type: 'file', label: 'File', icon: Paperclip, description: 'Document attachment' },
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTool,
   onToolChange,
   onAddElement,
+  onOpenUpload,
   onOpenTemplates,
   onOpenHelp,
   onDeleteSelected,
   hasSelection,
   onStartConnectingMode,
 }) => {
-  const handleDragStart = (e: React.DragEvent, type: ElementType) => {
-    e.dataTransfer.setData('application/milanote-type', type);
+  const handleItemClick = (type: ElementType | 'upload') => {
+    if (type === 'upload') {
+      if (onOpenUpload) onOpenUpload('media');
+      return;
+    }
+    onAddElement(type);
+  };
+
+  const handleDragStart = (e: React.DragEvent, type: ElementType | 'upload') => {
+    e.dataTransfer.setData('application/folioboard-type', type);
+    e.dataTransfer.setData('application/folioboard-type', type);
     e.dataTransfer.effectAllowed = 'copy';
   };
 
   return (
     <aside className="w-18 h-full bg-white dark:bg-[#18191c] border-r border-neutral-200/90 dark:border-neutral-800 flex flex-col items-center py-3 z-30 select-none shadow-2xs transition-colors">
-      {/* Milanote Brand Icon */}
+      {/* Folioboard Brand Logo */}
       <div className="mb-2">
         <div
-          className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-neutral-800 flex items-center justify-center text-white font-bold text-lg shadow-sm cursor-pointer hover:bg-neutral-800 dark:hover:bg-neutral-700 transition-colors border border-transparent dark:border-neutral-700"
-          title="Milanote Canvas"
+          className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 dark:from-blue-600 dark:to-indigo-700 flex items-center justify-center text-white shadow-sm cursor-pointer hover:scale-105 active:scale-95 transition-all border border-blue-400/20 shadow-blue-500/20"
+          title="Folioboard Canvas"
         >
-          <div className="grid grid-cols-2 gap-1 p-2">
-            <div className="w-2 h-3 bg-white rounded-xs"></div>
-            <div className="w-2 h-4.5 bg-blue-400 rounded-xs"></div>
-            <div className="w-2 h-2.5 bg-amber-400 rounded-xs"></div>
-            <div className="w-2 h-2 bg-emerald-400 rounded-xs"></div>
-          </div>
+          <DuotoneIcon
+            icon={Layers}
+            className="w-5 h-5 text-white"
+            fillColor="currentColor"
+            fillOpacity={0.35}
+            strokeWidth={2.2}
+          />
         </div>
       </div>
 
@@ -115,15 +126,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
               key={item.type}
               draggable
               onDragStart={(e) => handleDragStart(e, item.type)}
-              onClick={() => onAddElement(item.type)}
-              className="group relative w-14 h-13 rounded-xl flex flex-col items-center justify-center gap-0.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/90 dark:hover:bg-neutral-800/90 active:scale-95 transition-all cursor-grab active:cursor-grabbing"
-              title={`${item.label} (Click to add or drag onto canvas)`}
+              onClick={() => handleItemClick(item.type)}
+              className="group relative w-14 min-h-[52px] py-1 rounded-xl flex flex-col items-center justify-center gap-0.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/90 dark:hover:bg-neutral-800/90 active:scale-95 transition-all cursor-grab active:cursor-grabbing"
+              title={`${item.label} (${item.type === 'upload' ? 'Click to upload images, videos & files' : 'Click to add'} or drag onto canvas)`}
             >
               <DuotoneIcon
                 icon={item.icon}
                 className="w-4.5 h-4.5 group-hover:scale-110 transition-transform"
               />
-              <span className="text-[10px] font-medium tracking-tight text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-200">
+              <span className="text-[9.5px] leading-tight font-medium tracking-tight text-center px-0.5 text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-200">
                 {item.label}
               </span>
             </button>

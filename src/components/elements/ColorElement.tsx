@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { CanvasElement } from '../../types/milanote';
+import type { CanvasElement } from '../../types/folioboard';
 import { Copy, Check } from 'lucide-react';
 
 interface ColorElementProps {
@@ -32,10 +32,10 @@ export const ColorElement: React.FC<ColorElementProps> = ({ element, onUpdate })
   };
 
   return (
-    <div className="flex flex-col h-full w-full bg-white dark:bg-[#1e2024] rounded-lg overflow-hidden border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs">
+    <div className="flex flex-col h-full w-full overflow-hidden">
       {/* Color Swatch block */}
       <div
-        className="relative flex-1 min-h-[90px] w-full transition-colors flex items-end p-2 cursor-pointer group"
+        className="relative flex-1 min-h-[44px] w-full transition-colors flex items-end p-2 cursor-pointer group"
         style={{ backgroundColor: data.hex || '#e2e8f0' }}
         onClick={handleCopy}
       >
@@ -49,7 +49,7 @@ export const ColorElement: React.FC<ColorElementProps> = ({ element, onUpdate })
         />
         <button
           onClick={handleCopy}
-          className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-[10px] px-2 py-0.5 rounded flex items-center gap-1 backdrop-blur-xs"
+          className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-[10px] px-2 py-0.5 rounded-md flex items-center gap-1 backdrop-blur-xs"
         >
           {copied ? <Check className="w-2.5 h-2.5 text-emerald-400" /> : <Copy className="w-2.5 h-2.5" />}
           {copied ? 'Copied' : 'Copy Hex'}
@@ -57,16 +57,16 @@ export const ColorElement: React.FC<ColorElementProps> = ({ element, onUpdate })
       </div>
 
       {/* Info footer */}
-      <div className="p-3 bg-white dark:bg-[#1e2024] flex flex-col gap-0.5 select-text">
+      <div className="p-2.5 bg-white/95 dark:bg-[#1e2024]/95 flex flex-col gap-0.5 select-text border-t border-neutral-100 dark:border-neutral-800 shrink-0">
         <input
           type="text"
           value={data.name || ''}
           placeholder="Color Name"
           onChange={handleNameChange}
-          className="font-medium text-xs text-neutral-900 dark:text-white outline-none bg-transparent"
+          className="font-medium text-xs text-neutral-900 dark:text-white outline-none bg-transparent truncate"
         />
-        <div className="flex items-center justify-between mt-1">
-          <span className="font-mono text-[11px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
+        <div className="flex items-center justify-between mt-0.5">
+          <span className="font-mono text-[10px] text-neutral-500 dark:text-neutral-400 uppercase tracking-wider">
             {data.hex || '#000000'}
           </span>
           <span className="text-[10px] text-neutral-400 dark:text-neutral-500 capitalize">

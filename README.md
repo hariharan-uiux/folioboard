@@ -1,6 +1,6 @@
-# Milanote Canvas — Visual Board & Notes for Creative Work
+# Folioboard — Visual Board & Notes for Creative Work
 
-A web application reverse-engineered from [Milanote](https://milanote.com), designed for organizing creative projects, moodboards, brainstorms, and design systems visually on an infinite canvas.
+A web application designed for organizing creative projects, moodboards, brainstorms, and design systems visually on an infinite canvas.
 
 Built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 
@@ -10,19 +10,19 @@ Built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 
 - **Infinite Canvas & Navigation:**
   - Smooth pan & zoom (mouse drag, wheel, pinch, and zoom controls from 25% to 250%).
-  - Milanote signature dot-grid background with snap-to-grid toggle (20px grid).
+  - Folioboard signature dot-grid background with snap-to-grid toggle (20px grid).
   - Marquee box selection (`Shift + Drag`) to select and move multiple elements together.
 
 - **Creative Element Tools (Left Dock):**
   - 📝 **Notes:** Sticky notes with customizable fonts (Serif/Sans), sizes, and colors.
-  - 🖼️ **Images:** Visual references with aspect-ratio preservation, captions, and lightbox preview.
+  - ☁️ **Media & Uploads:** Image and video cards with aspect-ratio preservation, captions, video playback, and lightbox preview.
+  - 📎 **Files & Documents:** Attachment cards with file format badges and instant download.
   - 🔗 **Links:** Rich bookmarks with domain pills, titles, descriptions, and one-click external navigation.
   - ✅ **To-Do / Checklists:** Progress bar tracking, strikethrough animations, and completion confetti.
   - 📁 **Nested Sub-Boards:** Sub-boards that allow infinite hierarchical navigation with breadcrumbs.
   - 🗂️ **Columns:** Column stacks to group related cards together vertically.
-  - 🎨 **Color Swatches:** Milanote pastel color swatches with one-click hex copying and custom color picker.
+  - 🎨 **Color Swatches:** Curated color swatches with one-click hex copying and custom color picker.
   - ✏️ **Sketches:** In-card freehand drawing canvas with multiple pen colors and stroke sizes.
-  - 📎 **File Attachments:** Attachment cards with file format badges and download simulation.
 
 - **Interactive Connections (Lines & Arrows):**
   - Smooth cubic Bezier connector curves with directional arrowheads.
@@ -31,7 +31,7 @@ Built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 
 - **Context Floating Action Bar:**
   - Appears right above selected elements.
-  - Quick Milanote pastel color palette swatches, duplication (`Ctrl+D`), layering (z-index), and deletion (`Del`).
+  - Quick pastel color palette swatches, duplication (`Ctrl+D`), layering (z-index), and deletion (`Del`).
 
 - **Local-First & Data Portability:**
   - Auto-saved state via `localStorage`.
@@ -51,8 +51,8 @@ Built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 
 ```bash
 # Clone the repository
-git clone https://github.com/hariharan-uiux/milanote-canvas.git
-cd milanote-canvas
+git clone https://github.com/hariharan-uiux/folioboard.git
+cd folioboard
 
 # Install dependencies
 npm install
@@ -69,13 +69,13 @@ npm run preview
 
 ## 🛠️ Architecture
 
-- `src/types/milanote.ts`: Data types for canvas elements, boards, connections, and state models.
+- `src/types/folioboard.ts`: Data types for canvas elements, boards, connections, and state models.
 - `src/components/Canvas.tsx`: Infinite board viewport transformer, drag & drop, selection, and connectors.
-- `src/components/Sidebar.tsx`: Milanote tool dock with draggable element handles.
+- `src/components/Sidebar.tsx`: Folioboard tool dock with draggable element handles.
 - `src/components/Header.tsx`: Breadcrumb trail, search trigger, theme switcher, and export controls.
 - `src/components/ConnectionLines.tsx`: SVG Bezier curve engine with anchors and markers.
 - `src/components/FloatingToolbar.tsx`: Contextual card action bar.
-- `src/components/elements/*`: Individual renderers for Notes, Images, Links, Tasks, Boards, Colors, Sketches, Columns, and Files.
+- `src/components/elements/*`: Individual renderers for Notes, Images/Videos, Links, Tasks, Boards, Colors, Sketches, Columns, and Files.
 - `src/utils/storage.ts`: Local-first persistence, JSON backup/restore, and Markdown document generation.
 - `src/utils/templates.ts`: Preloaded creative project templates.
 

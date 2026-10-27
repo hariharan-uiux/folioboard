@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Board } from '../types/milanote';
+import type { Board } from '../types/folioboard';
 import { DuotoneIcon } from './DuotoneIcon';
 import {
   ChevronRight,
@@ -10,7 +10,6 @@ import {
   Moon,
   Sun,
   RotateCcw,
-  Sparkles,
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -20,7 +19,7 @@ interface HeaderProps {
   onUpdateBoardTitle: (title: string) => void;
   onOpenSearch: () => void;
   onOpenExport: () => void;
-  onOpenTemplates: () => void;
+  onOpenTemplates?: () => void;
   onResetBoard: () => void;
   gridVisible: boolean;
   onToggleGrid: () => void;
@@ -28,7 +27,7 @@ interface HeaderProps {
   onToggleSnap: () => void;
   theme: 'light' | 'dark';
   onToggleTheme: () => void;
-  zoom: number;
+  zoom?: number;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,7 +37,6 @@ export const Header: React.FC<HeaderProps> = ({
   onUpdateBoardTitle,
   onOpenSearch,
   onOpenExport,
-  onOpenTemplates,
   onResetBoard,
   gridVisible,
   onToggleGrid,
@@ -46,12 +44,11 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleSnap,
   theme,
   onToggleTheme,
-  zoom,
 }) => {
   return (
     <header className="h-14 w-full bg-white dark:bg-[#18191c] border-b border-neutral-200/90 dark:border-neutral-800 px-4 flex items-center justify-between select-none z-20 shadow-2xs transition-colors">
       {/* Left: Breadcrumbs & Board Title */}
-      <div className="flex items-center gap-2 max-w-[50%]">
+      <div className="flex items-center gap-2 min-w-[180px] max-w-[30%]">
         <nav className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400 overflow-hidden text-ellipsis whitespace-nowrap">
           {breadcrumbs.map((crumb, idx) => {
             const isLast = idx === breadcrumbs.length - 1;
@@ -63,13 +60,13 @@ export const Header: React.FC<HeaderProps> = ({
                     type="text"
                     value={currentBoard.title || 'Untitled Board'}
                     onChange={(e) => onUpdateBoardTitle(e.target.value)}
-                    className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 bg-transparent outline-none border-b border-transparent focus:border-neutral-400 dark:focus:border-neutral-600 px-1 py-0.5 max-w-[260px] truncate"
+                    className="font-semibold text-sm text-neutral-900 dark:text-neutral-100 bg-transparent outline-none border-b border-transparent focus:border-neutral-400 dark:focus:border-neutral-600 px-1 py-0.5 max-w-[200px] truncate"
                     placeholder="Board Name"
                   />
                 ) : (
                   <button
                     onClick={() => onNavigateBoard(crumb.id)}
-                    className="hover:text-neutral-900 dark:hover:text-neutral-100 font-medium truncate max-w-[140px] transition-colors"
+                    className="hover:text-neutral-900 dark:hover:text-neutral-100 font-medium truncate max-w-[120px] transition-colors"
                   >
                     {crumb.title}
                   </button>
@@ -80,35 +77,32 @@ export const Header: React.FC<HeaderProps> = ({
         </nav>
       </div>
 
-      {/* Center: Global Search Bar */}
-      <button
-        onClick={onOpenSearch}
-        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-300 text-xs transition-colors border border-neutral-200/60 dark:border-neutral-700/60"
-        title="Search cards & notes (Cmd/Ctrl+K)"
-      >
-        <DuotoneIcon icon={Search} className="w-3.5 h-3.5" />
-        <span>Search board...</span>
-        <kbd className="text-[10px] font-mono bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-400">
-          ⌘K
-        </kbd>
-      </button>
-
-      {/* Right Controls */}
-      <div className="flex items-center gap-1.5">
-        {/* Template Switcher button */}
+      {/* Center: Bigger Global Search Bar */}
+      <div className="flex-1 flex justify-center px-4 max-w-xl">
         <button
-          onClick={onOpenTemplates}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
-          title="Browse board templates"
+          onClick={onOpenSearch}
+          className="w-full max-w-md h-9 flex items-center justify-between px-3.5 rounded-xl bg-neutral-100/80 dark:bg-neutral-800/70 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 text-xs transition-all border border-neutral-200/60 dark:border-neutral-700/60 hover:border-neutral-300 dark:hover:border-neutral-600 shadow-2xs group"
+          title="Search cards & notes (Cmd/Ctrl+K)"
         >
-          <DuotoneIcon icon={Sparkles} className="w-3.5 h-3.5 text-amber-500" />
-          <span className="hidden sm:inline">Templates</span>
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <DuotoneIcon
+              icon={Search}
+              className="w-4 h-4 text-neutral-400 dark:text-neutral-500 group-hover:text-neutral-600 dark:group-hover:text-neutral-300 transition-colors shrink-0"
+            />
+            <span className="font-normal truncate">Search cards, notes, tasks across boards...</span>
+          </div>
+          <kbd className="text-[10px] font-mono font-medium bg-white dark:bg-neutral-900 px-2 py-0.5 rounded-md border border-neutral-200 dark:border-neutral-700 text-neutral-400 dark:text-neutral-400 shadow-2xs shrink-0 ml-2">
+            ⌘K
+          </kbd>
         </button>
+      </div>
 
-        {/* Grid & Snap Toggles */}
+      {/* Right Controls: Export, Reset, Theme, Magnet, Grid icons alone */}
+      <div className="flex items-center gap-1 min-w-[180px] justify-end">
+        {/* Grid Toggle */}
         <button
           onClick={onToggleGrid}
-          className={`p-1.5 rounded-lg text-xs transition-colors ${
+          className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
             gridVisible
               ? 'text-neutral-900 dark:text-neutral-100 bg-neutral-100 dark:bg-neutral-800'
               : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -118,9 +112,10 @@ export const Header: React.FC<HeaderProps> = ({
           <DuotoneIcon icon={Grid3X3} className="w-4 h-4" />
         </button>
 
+        {/* Magnet / Snap Toggle */}
         <button
           onClick={onToggleSnap}
-          className={`p-1.5 rounded-lg text-xs transition-colors ${
+          className={`p-2 rounded-xl text-xs transition-colors cursor-pointer ${
             gridSnap
               ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
               : 'text-neutral-400 dark:text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
@@ -130,15 +125,10 @@ export const Header: React.FC<HeaderProps> = ({
           <DuotoneIcon icon={Magnet} className="w-4 h-4" />
         </button>
 
-        {/* Zoom display */}
-        <span className="text-[11px] font-mono text-neutral-400 dark:text-neutral-500 px-1 hidden lg:inline">
-          {Math.round(zoom * 100)}%
-        </span>
-
-        {/* Theme toggle */}
+        {/* Dark / Light Theme Toggle */}
         <button
           onClick={onToggleTheme}
-          className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="p-2 rounded-xl text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} theme`}
         >
           {theme === 'light' ? (
@@ -148,24 +138,24 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </button>
 
-        {/* Reset */}
+        {/* Reset Board */}
         <button
           onClick={onResetBoard}
-          className="p-1.5 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+          className="p-2 rounded-xl text-neutral-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
           title="Reset board to fresh state"
         >
-          <DuotoneIcon icon={RotateCcw} className="w-3.5 h-3.5" />
+          <DuotoneIcon icon={RotateCcw} className="w-4 h-4" />
         </button>
 
-        <div className="w-[1px] h-5 bg-neutral-200 dark:bg-neutral-800 mx-1" />
+        <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-800 mx-1" />
 
-        {/* Export / Share */}
+        {/* Export / Share Icon Alone */}
         <button
           onClick={onOpenExport}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-medium shadow-xs transition-colors"
+          className="p-2 rounded-xl text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors cursor-pointer"
+          title="Export / Share board (Markdown, JSON, PDF)"
         >
-          <DuotoneIcon icon={Share2} className="w-3.5 h-3.5" />
-          <span>Export / Share</span>
+          <DuotoneIcon icon={Share2} className="w-4 h-4" />
         </button>
       </div>
     </header>
