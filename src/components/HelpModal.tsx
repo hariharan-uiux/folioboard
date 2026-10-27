@@ -8,14 +8,17 @@ interface HelpModalProps {
 }
 
 const SHORTCUTS = [
-  { key: 'Drag background', action: 'Pan infinitely across the board' },
-  { key: 'Wheel / Pinch', action: 'Zoom in and out smoothly' },
-  { key: 'Box selection', action: 'Drag a selection marquee to select multiple cards' },
-  { key: 'Drag from dock', action: 'Drag any tool from the left sidebar onto canvas' },
-  { key: 'Hover card anchors', action: 'Drag connection line between any two cards' },
-  { key: 'Double-click Board', action: 'Enter nested sub-board' },
+  { key: 'Wheel', action: 'Scroll vertically across the board' },
+  { key: 'Shift + Wheel', action: 'Scroll horizontally across the board' },
+  { key: 'Ctrl / Cmd + Wheel', action: 'Zoom in and out centered on cursor' },
+  { key: 'Space + Drag / Hand (H)', action: 'Pan infinitely in any direction' },
+  { key: 'Drag background (Arrow V)', action: 'Draw marquee box to select cards' },
+  { key: '⌘ / Ctrl + A', action: 'Select all cards on board' },
+  { key: 'Arrow keys (Shift)', action: 'Nudge selected cards (10px / 40px)' },
+  { key: '⌘ / Ctrl + C / V', action: 'Copy & paste cards or screenshot images' },
+  { key: '⌘ / Ctrl + Z / Y', action: 'Undo and Redo canvas actions' },
   { key: '⌘ / Ctrl + K', action: 'Global search cards across all boards' },
-  { key: '⌘ / Ctrl + D', action: 'Duplicate selected cards' },
+  { key: 'Double-click Board', action: 'Enter nested sub-board' },
   { key: 'Delete / Backspace', action: 'Remove selected card or connection line' },
 ];
 

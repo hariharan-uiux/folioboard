@@ -175,30 +175,50 @@ export const Canvas: React.FC<CanvasProps> = ({
     [pan, zoom]
   );
 
-  // Wheel zoom / pan
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    if (e.ctrlKey || e.metaKey) {
-      const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
-      const nextZoom = Math.min(Math.max(zoom * zoomFactor, 0.25), 2.5);
+  // Native Wheel listener: handles zoom, vertical scroll, and horizontal scroll (Shift + Wheel / trackpad)
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
 
-      if (!containerRef.current) return;
-      const rect = containerRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+    const onWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
 
-      const newPanX = mouseX - ((mouseX - pan.x) / zoom) * nextZoom;
-      const newPanY = mouseY - ((mouseY - pan.y) / zoom) * nextZoom;
+      if (e.ctrlKey || e.metaKey) {
+        const zoomFactor = e.deltaY < 0 ? 1.08 : 0.92;
+        const nextZoom = Math.min(Math.max(zoom * zoomFactor, 0.25), 2.5);
 
-      onZoomChange(nextZoom);
-      onPanChange({ x: newPanX, y: newPanY });
-    } else {
-      onPanChange({
-        x: pan.x - e.deltaX,
-        y: pan.y - e.deltaY,
-      });
-    }
-  };
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const newPanX = mouseX - ((mouseX - pan.x) / zoom) * nextZoom;
+        const newPanY = mouseY - ((mouseY - pan.y) / zoom) * nextZoom;
+
+        onZoomChange(nextZoom);
+        onPanChange({ x: newPanX, y: newPanY });
+      } else {
+        const multiplier = e.deltaMode === 1 ? 24 : e.deltaMode === 2 ? window.innerHeight : 1;
+        let dx = e.deltaX * multiplier;
+        let dy = e.deltaY * multiplier;
+
+        // Shift + Wheel converts vertical wheel movement into horizontal scroll
+        if (e.shiftKey && Math.abs(dx) < 0.01 && Math.abs(dy) > 0) {
+          dx = dy;
+          dy = 0;
+        }
+
+        onPanChange({
+          x: pan.x - dx,
+          y: pan.y - dy,
+        });
+      }
+    };
+
+    container.addEventListener('wheel', onWheelNative, { passive: false });
+    return () => {
+      container.removeEventListener('wheel', onWheelNative);
+    };
+  }, [pan, zoom, onPanChange, onZoomChange]);
 
   // Canvas background pointer down
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
@@ -448,7 +468,6 @@ export const Canvas: React.FC<CanvasProps> = ({
       onMouseDown={handleCanvasMouseDown}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
-      onWheel={handleWheel}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       style={{ cursor: getCanvasCursor() }}

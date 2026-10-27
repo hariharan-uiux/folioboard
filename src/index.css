@@ -21,12 +21,14 @@
   background-color: #f7f7f9;
   background-image: radial-gradient(circle, rgba(160, 164, 178, 0.45) 1.25px, transparent 1.25px);
   background-size: 24px 24px;
+  overscroll-behavior: none;
 }
 
 .canvas-grid-dark {
   background-color: #121316;
   background-image: radial-gradient(circle, rgba(100, 106, 120, 0.45) 1.25px, transparent 1.25px);
   background-size: 24px 24px;
+  overscroll-behavior: none;
 }
 
 /* Custom Scrollbars */
