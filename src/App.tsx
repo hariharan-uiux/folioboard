@@ -19,6 +19,7 @@ import { HelpModal } from './components/HelpModal';
 
 export function App() {
   const [state, setState] = useState<CanvasState>(getInitialState);
+  const [activeTool, setActiveTool] = useState<'select' | 'hand'>('select');
 
   // Modals state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -304,6 +305,154 @@ export function App() {
     }));
   };
 
+  // Add custom image element (from clipboard paste or OS file drop)
+  const handleAddImageWithData = useCallback(
+    (dataUrl: string, x?: number, y?: number, name?: string) => {
+      const posX =
+        x !== undefined
+          ? x
+          : Math.round((-state.pan.x + window.innerWidth / 2 - 160) / state.zoom);
+      const posY =
+        y !== undefined
+          ? y
+          : Math.round((-state.pan.y + window.innerHeight / 2 - 170) / state.zoom);
+
+      const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const newImgEl: CanvasElement = {
+        id,
+        boardId: state.currentBoardId,
+        type: 'image',
+        x: posX,
+        y: posY,
+        width: 320,
+        height: 340,
+        zIndex: Object.keys(state.elements).length + 1,
+        color: '#ffffff',
+        data: {
+          url: dataUrl,
+          caption: name ? name.replace(/\.[^/.]+$/, '') : 'Pasted image reference',
+        },
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+
+      setState((prev) => ({
+        ...prev,
+        elements: {
+          ...prev.elements,
+          [id]: newImgEl,
+        },
+        selectedElementIds: [id],
+      }));
+    },
+    [state.pan, state.zoom, state.currentBoardId, state.elements]
+  );
+
+  // Global Clipboard Paste: supports image files, screenshots, image URLs, and copied elements
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput =
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable;
+
+      // 1. Check for Image files (e.g. screenshots, copied image files)
+      if (e.clipboardData && e.clipboardData.files && e.clipboardData.files.length > 0) {
+        const file = e.clipboardData.files[0];
+        if (file.type.startsWith('image/')) {
+          e.preventDefault();
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const dataUrl = event.target?.result as string;
+            handleAddImageWithData(dataUrl, undefined, undefined, file.name);
+          };
+          reader.readAsDataURL(file);
+          return;
+        }
+      }
+
+      // If typing in an input, don't intercept text pastes
+      if (isInput) return;
+
+      // 2. Check for Text / URL clipboard
+      const text = e.clipboardData?.getData('text/plain')?.trim();
+      if (text) {
+        // If image URL
+        const isImageUrl =
+          /\.(png|jpe?g|gif|webp|svg|avif)(\?.*)?$/i.test(text) ||
+          /(images\.unsplash\.com|i\.imgur\.com|media\.giphy\.com)/i.test(text);
+
+        if (isImageUrl) {
+          e.preventDefault();
+          handleAddImageWithData(text, undefined, undefined, 'Web image');
+          return;
+        }
+
+        // Check if user copied canvas cards JSON (internal copy paste)
+        try {
+          const parsed = JSON.parse(text);
+          if (parsed && parsed.__milanote_copy__ && Array.isArray(parsed.elements)) {
+            e.preventDefault();
+            const newElements: Record<string, CanvasElement> = {};
+            const newSelectedIds: string[] = [];
+
+            parsed.elements.forEach((orig: CanvasElement, idx: number) => {
+              const newId = `el_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`;
+              newElements[newId] = {
+                ...orig,
+                id: newId,
+                boardId: state.currentBoardId,
+                x: orig.x + 30,
+                y: orig.y + 30,
+                zIndex: Object.keys(state.elements).length + idx + 1,
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
+              };
+              newSelectedIds.push(newId);
+            });
+
+            setState((prev) => ({
+              ...prev,
+              elements: { ...prev.elements, ...newElements },
+              selectedElementIds: newSelectedIds,
+            }));
+            return;
+          }
+        } catch {}
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [handleAddImageWithData, state.currentBoardId, state.elements]);
+
+  // Global Clipboard Copy: Ctrl+C / Cmd+C copies selected elements
+  useEffect(() => {
+    const handleCopy = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === 'c' && state.selectedElementIds.length > 0) {
+        const selected = state.selectedElementIds
+          .map((id) => state.elements[id])
+          .filter(Boolean);
+
+        if (selected.length > 0) {
+          const payload = JSON.stringify({
+            __milanote_copy__: true,
+            elements: selected,
+          });
+          navigator.clipboard.writeText(payload);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleCopy);
+    return () => window.removeEventListener('keydown', handleCopy);
+  }, [state.selectedElementIds, state.elements]);
+
   // Delete element
   const handleDeleteElement = useCallback((id: string) => {
     setState((prev) => {
@@ -498,6 +647,8 @@ export function App() {
       {/* Main Workspace Area (Left Toolbar + Infinite Canvas) */}
       <div className="flex flex-1 w-full h-[calc(100vh-3.5rem)] overflow-hidden">
         <Sidebar
+          activeTool={activeTool}
+          onToolChange={setActiveTool}
           onAddElement={handleAddElementFromSidebar}
           onOpenTemplates={() => setIsTemplatesOpen(true)}
           onOpenHelp={() => setIsHelpOpen(true)}
@@ -525,6 +676,7 @@ export function App() {
           gridSnap={state.gridSnap}
           gridVisible={state.gridVisible}
           theme={state.theme}
+          activeTool={activeTool}
           onPanChange={(pan) => setState((p) => ({ ...p, pan }))}
           onZoomChange={(zoom) => setState((p) => ({ ...p, zoom }))}
           onSelectElements={(ids) => setState((p) => ({ ...p, selectedElementIds: ids }))}
@@ -532,6 +684,7 @@ export function App() {
           onDeleteElement={handleDeleteElement}
           onDuplicateElement={handleDuplicateElement}
           onAddElementAtCoords={handleAddElementAtCoords}
+          onAddImageWithData={handleAddImageWithData}
           onNavigateBoard={handleNavigateBoard}
           onAddConnection={handleAddConnection}
           onDeleteConnection={handleDeleteConnection}

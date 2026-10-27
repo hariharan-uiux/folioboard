@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import type { CanvasElement, Board } from '../types/milanote';
+import { DuotoneIcon } from './DuotoneIcon';
 import {
   Search,
   X,
@@ -96,7 +97,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
       >
         {/* Search Input Bar */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b border-neutral-100 dark:border-neutral-800">
-          <Search className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
+          <DuotoneIcon icon={Search} className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
           <input
             type="text"
             autoFocus
@@ -127,7 +128,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
             </div>
           ) : (
             results.map((el) => {
-              const Icon = TYPE_ICONS[el.type] || FileText;
+              const Icon = (TYPE_ICONS[el.type] || FileText) as any;
               const boardTitle = boards[el.boardId]?.title || 'Main Board';
               const data = el.data || {};
               const title =
@@ -157,7 +158,7 @@ export const SearchModal: React.FC<SearchModalProps> = ({
                     className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border border-neutral-200 dark:border-neutral-700"
                     style={{ backgroundColor: el.color || '#f8f9fa' }}
                   >
-                    <Icon className="w-4 h-4 text-neutral-700 dark:text-neutral-900" />
+                    <DuotoneIcon icon={Icon} className="w-4 h-4 text-neutral-700 dark:text-neutral-900" />
                   </div>
 
                   <div className="flex-1 min-w-0">

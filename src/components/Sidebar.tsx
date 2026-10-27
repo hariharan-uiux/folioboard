@@ -1,6 +1,9 @@
 import React from 'react';
 import type { ElementType } from '../types/milanote';
+import { DuotoneIcon } from './DuotoneIcon';
 import {
+  MousePointer2,
+  Hand,
   FileText,
   Image as ImageIcon,
   Link as LinkIcon,
@@ -17,6 +20,8 @@ import {
 } from 'lucide-react';
 
 interface SidebarProps {
+  activeTool: 'select' | 'hand';
+  onToolChange: (tool: 'select' | 'hand') => void;
   onAddElement: (type: ElementType) => void;
   onOpenTemplates: () => void;
   onOpenHelp: () => void;
@@ -28,7 +33,7 @@ interface SidebarProps {
 const TOOL_ITEMS: {
   type: ElementType;
   label: string;
-  icon: React.ElementType;
+  icon: any;
   description: string;
 }[] = [
   { type: 'note', label: 'Note', icon: FileText, description: 'Text & notes' },
@@ -43,6 +48,8 @@ const TOOL_ITEMS: {
 ];
 
 export const Sidebar: React.FC<SidebarProps> = ({
+  activeTool,
+  onToolChange,
   onAddElement,
   onOpenTemplates,
   onOpenHelp,
@@ -57,8 +64,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="w-18 h-full bg-white dark:bg-[#18191c] border-r border-neutral-200/90 dark:border-neutral-800 flex flex-col items-center py-3 z-30 select-none shadow-2xs transition-colors">
-      {/* Milanote Logo / Home Icon */}
-      <div className="mb-4">
+      {/* Milanote Brand Icon */}
+      <div className="mb-2">
         <div
           className="w-10 h-10 rounded-xl bg-neutral-900 dark:bg-neutral-800 flex items-center justify-center text-white font-bold text-lg shadow-sm cursor-pointer hover:bg-neutral-800 dark:hover:bg-neutral-700 transition-colors border border-transparent dark:border-neutral-700"
           title="Milanote Canvas"
@@ -72,12 +79,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
+      {/* Select (Arrow) vs Hand (Pan) Mode */}
+      <div className="flex flex-col gap-1 p-1 bg-neutral-100 dark:bg-neutral-800/80 rounded-xl mb-2">
+        <button
+          onClick={() => onToolChange('select')}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+            activeTool === 'select'
+              ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-xs'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+          }`}
+          title="Arrow Selection Tool (V) - Click to select or drag marquee to select contents"
+        >
+          <DuotoneIcon icon={MousePointer2} className="w-4 h-4" />
+        </button>
+        <button
+          onClick={() => onToolChange('hand')}
+          className={`w-9 h-9 rounded-lg flex items-center justify-center transition-all ${
+            activeTool === 'hand'
+              ? 'bg-white dark:bg-neutral-700 text-blue-600 dark:text-blue-400 shadow-xs'
+              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+          }`}
+          title="Hand / Pan Tool (H) - Drag anywhere to move canvas"
+        >
+          <DuotoneIcon icon={Hand} className="w-4 h-4" />
+        </button>
+      </div>
+
       <div className="w-10 h-[1px] bg-neutral-200/80 dark:bg-neutral-800 mb-2" />
 
       {/* Primary Tool items */}
       <div className="flex-1 w-full flex flex-col items-center gap-1 overflow-y-auto overflow-x-hidden px-1">
         {TOOL_ITEMS.map((item) => {
-          const Icon = item.icon;
           return (
             <button
               key={item.type}
@@ -87,7 +119,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="group relative w-14 h-13 rounded-xl flex flex-col items-center justify-center gap-0.5 text-neutral-600 dark:text-neutral-400 hover:text-neutral-950 dark:hover:text-white hover:bg-neutral-100/90 dark:hover:bg-neutral-800/90 active:scale-95 transition-all cursor-grab active:cursor-grabbing"
               title={`${item.label} (Click to add or drag onto canvas)`}
             >
-              <Icon className="w-4.5 h-4.5 group-hover:scale-110 transition-transform" />
+              <DuotoneIcon
+                icon={item.icon}
+                className="w-4.5 h-4.5 group-hover:scale-110 transition-transform"
+              />
               <span className="text-[10px] font-medium tracking-tight text-neutral-500 dark:text-neutral-400 group-hover:text-neutral-900 dark:group-hover:text-neutral-200">
                 {item.label}
               </span>
@@ -101,7 +136,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="group relative w-14 h-13 rounded-xl flex flex-col items-center justify-center gap-0.5 text-neutral-600 dark:text-neutral-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50/80 dark:hover:bg-blue-950/40 active:scale-95 transition-all"
           title="Line connector (Select card anchor to connect)"
         >
-          <GitBranch className="w-4.5 h-4.5 group-hover:scale-110 transition-transform text-neutral-600 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+          <DuotoneIcon
+            icon={GitBranch}
+            className="w-4.5 h-4.5 group-hover:scale-110 transition-transform"
+          />
           <span className="text-[10px] font-medium tracking-tight text-neutral-500 dark:text-neutral-400 group-hover:text-blue-600 dark:group-hover:text-blue-400">
             Line
           </span>
@@ -117,7 +155,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-10 h-10 rounded-xl flex items-center justify-center text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Templates Library"
         >
-          <LayoutTemplate className="w-4.5 h-4.5" />
+          <DuotoneIcon icon={LayoutTemplate} className="w-4.5 h-4.5" />
         </button>
 
         <button
@@ -130,7 +168,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           }`}
           title={hasSelection ? 'Delete Selected (Del)' : 'Trash'}
         >
-          <Trash2 className="w-4.5 h-4.5" />
+          <DuotoneIcon icon={Trash2} className="w-4.5 h-4.5" />
         </button>
 
         <button
@@ -138,7 +176,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           className="w-10 h-10 rounded-xl flex items-center justify-center text-neutral-400 dark:text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Shortcuts & Tips"
         >
-          <HelpCircle className="w-4.5 h-4.5" />
+          <DuotoneIcon icon={HelpCircle} className="w-4.5 h-4.5" />
         </button>
       </div>
     </aside>

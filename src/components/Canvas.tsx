@@ -16,6 +16,7 @@ import { ColumnElement } from './elements/ColumnElement';
 import { ColorElement } from './elements/ColorElement';
 import { SketchElement } from './elements/SketchElement';
 import { FileElement } from './elements/FileElement';
+import { DuotoneIcon } from './DuotoneIcon';
 import { Plus, Minus, Maximize, ZoomIn } from 'lucide-react';
 
 interface CanvasProps {
@@ -28,6 +29,7 @@ interface CanvasProps {
   gridSnap: boolean;
   gridVisible: boolean;
   theme: 'light' | 'dark';
+  activeTool: 'select' | 'hand';
   onPanChange: (pan: { x: number; y: number }) => void;
   onZoomChange: (zoom: number) => void;
   onSelectElements: (ids: string[]) => void;
@@ -35,6 +37,7 @@ interface CanvasProps {
   onDeleteElement: (id: string) => void;
   onDuplicateElement: (id: string) => void;
   onAddElementAtCoords: (type: ElementType, x: number, y: number) => void;
+  onAddImageWithData: (dataUrl: string, x: number, y: number, name?: string) => void;
   onNavigateBoard: (boardId: string) => void;
   onAddConnection: (
     fromId: string,
@@ -60,6 +63,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   gridSnap,
   gridVisible,
   theme,
+  activeTool,
   onPanChange,
   onZoomChange,
   onSelectElements,
@@ -67,6 +71,7 @@ export const Canvas: React.FC<CanvasProps> = ({
   onDeleteElement,
   onDuplicateElement,
   onAddElementAtCoords,
+  onAddImageWithData,
   onNavigateBoard,
   onAddConnection,
   onDeleteConnection,
@@ -76,11 +81,21 @@ export const Canvas: React.FC<CanvasProps> = ({
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  // Spacebar pan state
+  const [isSpacePressed, setIsSpacePressed] = useState(false);
+
   // Dragging Canvas (Panning)
   const [isPanning, setIsPanning] = useState(false);
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
 
-  // Dragging Cards
+  // Dragging Cards with threshold to prevent accidental shifts on click
+  const [dragCandidate, setDragCandidate] = useState<{
+    id: string;
+    startX: number;
+    startY: number;
+    clientStartX: number;
+    clientStartY: number;
+  } | null>(null);
   const [draggingElementId, setDraggingElementId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
@@ -99,10 +114,40 @@ export const Canvas: React.FC<CanvasProps> = ({
     y: 0,
   });
 
-  // Marquee box selection
+  // Marquee box selection (default for Arrow/Select tool!)
   const [isMarqueeSelecting, setIsMarqueeSelecting] = useState(false);
   const [marqueeStart, setMarqueeStart] = useState<{ x: number; y: number } | null>(null);
   const [marqueeEnd, setMarqueeEnd] = useState<{ x: number; y: number } | null>(null);
+
+  // Spacebar keyboard listener
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.code === 'Space' && !e.repeat) {
+        setIsSpacePressed(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsSpacePressed(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, []);
 
   const snapValue = (val: number) => {
     if (!gridSnap) return val;
@@ -157,23 +202,22 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   // Canvas background pointer down
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
-    // If clicking on canvas background directly:
-    if (e.button === 1 || e.altKey || (e.button === 0 && !e.shiftKey)) {
-      // Pan or selection clear
-      if (e.button === 0 && !e.altKey && !e.shiftKey) {
-        setIsPanning(true);
-        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-        onSelectElements([]);
-      } else if (e.button === 1 || e.altKey) {
-        setIsPanning(true);
-        setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-      }
-    } else if (e.button === 0 && e.shiftKey) {
-      // Marquee select
+    // If Space is held, middle-click, altKey, or Hand tool mode -> PAN canvas
+    if (e.button === 1 || e.altKey || isSpacePressed || activeTool === 'hand') {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      return;
+    }
+
+    // Default Left-Click: Arrow tool draws marquee box to SELECT contents!
+    if (e.button === 0) {
       const c = clientToCanvas(e.clientX, e.clientY);
       setIsMarqueeSelecting(true);
       setMarqueeStart(c);
       setMarqueeEnd(c);
+      if (!e.shiftKey) {
+        onSelectElements([]);
+      }
     }
 
     if (connectingSource) {
@@ -192,6 +236,22 @@ export const Canvas: React.FC<CanvasProps> = ({
       });
     } else if (isMarqueeSelecting && marqueeStart) {
       setMarqueeEnd(coords);
+    } else if (dragCandidate && !draggingElementId) {
+      // Check drag threshold (4px) before initiating element move
+      const dist = Math.hypot(
+        e.clientX - dragCandidate.clientStartX,
+        e.clientY - dragCandidate.clientStartY
+      );
+      if (dist > 4) {
+        setDraggingElementId(dragCandidate.id);
+        const el = elements[dragCandidate.id];
+        if (el) {
+          setDragOffset({
+            x: coords.x - el.x,
+            y: coords.y - el.y,
+          });
+        }
+      }
     } else if (draggingElementId && elements[draggingElementId]) {
       const draggedEl = elements[draggingElementId];
       const newX = snapValue(coords.x - dragOffset.x);
@@ -230,40 +290,52 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   const handleMouseUp = () => {
     if (isPanning) setIsPanning(false);
+    if (dragCandidate) setDragCandidate(null);
     if (draggingElementId) setDraggingElementId(null);
     if (resizingId) setResizingId(null);
 
+    // Finalize Marquee Selection of contents
     if (isMarqueeSelecting && marqueeStart && marqueeEnd) {
       const minX = Math.min(marqueeStart.x, marqueeEnd.x);
       const maxX = Math.max(marqueeStart.x, marqueeEnd.x);
       const minY = Math.min(marqueeStart.y, marqueeEnd.y);
       const maxY = Math.max(marqueeStart.y, marqueeEnd.y);
 
-      const selected = Object.values(elements)
-        .filter((el) => el.boardId === currentBoardId)
-        .filter((el) => {
-          return (
-            el.x < maxX &&
-            el.x + el.width > minX &&
-            el.y < maxY &&
-            el.y + el.height > minY
-          );
-        })
-        .map((el) => el.id);
+      // Only select if box has size > 4px
+      if (Math.abs(maxX - minX) > 4 || Math.abs(maxY - minY) > 4) {
+        const selected = Object.values(elements)
+          .filter((el) => el.boardId === currentBoardId)
+          .filter((el) => {
+            return (
+              el.x < maxX &&
+              el.x + el.width > minX &&
+              el.y < maxY &&
+              el.y + el.height > minY
+            );
+          })
+          .map((el) => el.id);
 
-      onSelectElements(selected);
+        onSelectElements(selected);
+      }
       setIsMarqueeSelecting(false);
       setMarqueeStart(null);
       setMarqueeEnd(null);
     }
   };
 
-  // Card pointer down (selection & drag preparation)
+  // Card pointer down (Selects initially; prepares drag candidate)
   const handleElementMouseDown = (
     e: React.MouseEvent,
     el: CanvasElement
   ) => {
     e.stopPropagation();
+
+    // If Hand tool or space is active, treat as pan
+    if (isSpacePressed || activeTool === 'hand' || e.button === 1) {
+      setIsPanning(true);
+      setPanStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
+      return;
+    }
 
     if (e.shiftKey) {
       if (selectedElementIds.includes(el.id)) {
@@ -278,10 +350,12 @@ export const Canvas: React.FC<CanvasProps> = ({
     }
 
     const coords = clientToCanvas(e.clientX, e.clientY);
-    setDraggingElementId(el.id);
-    setDragOffset({
-      x: coords.x - el.x,
-      y: coords.y - el.y,
+    setDragCandidate({
+      id: el.id,
+      startX: coords.x,
+      startY: coords.y,
+      clientStartX: e.clientX,
+      clientStartY: e.clientY,
     });
   };
 
@@ -310,9 +384,25 @@ export const Canvas: React.FC<CanvasProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    const coords = clientToCanvas(e.clientX, e.clientY);
+
+    // 1. Check for files dropped from OS (e.g. image files)
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      if (file.type.startsWith('image/')) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const dataUrl = event.target?.result as string;
+          onAddImageWithData(dataUrl, snapValue(coords.x - 160), snapValue(coords.y - 140), file.name);
+        };
+        reader.readAsDataURL(file);
+        return;
+      }
+    }
+
+    // 2. Check for sidebar tools
     const type = e.dataTransfer.getData('application/milanote-type') as ElementType;
     if (type) {
-      const coords = clientToCanvas(e.clientX, e.clientY);
       onAddElementAtCoords(type, snapValue(coords.x - 140), snapValue(coords.y - 80));
     }
   };
@@ -345,6 +435,13 @@ export const Canvas: React.FC<CanvasProps> = ({
     (el) => el.boardId === currentBoardId
   );
 
+  const getCanvasCursor = () => {
+    if (isPanning) return 'grabbing';
+    if (isSpacePressed || activeTool === 'hand') return 'grab';
+    if (isMarqueeSelecting) return 'crosshair';
+    return 'default';
+  };
+
   return (
     <div
       ref={containerRef}
@@ -354,7 +451,8 @@ export const Canvas: React.FC<CanvasProps> = ({
       onWheel={handleWheel}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
-      className={`relative flex-1 w-full h-full overflow-hidden select-none cursor-default transition-colors ${
+      style={{ cursor: getCanvasCursor() }}
+      className={`relative flex-1 w-full h-full overflow-hidden select-none transition-colors ${
         gridVisible
           ? theme === 'dark'
             ? 'canvas-grid-dark'
@@ -571,7 +669,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Zoom out"
         >
-          <Minus className="w-4 h-4" />
+          <DuotoneIcon icon={Minus} className="w-4 h-4" />
         </button>
 
         <button
@@ -590,7 +688,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Zoom in"
         >
-          <Plus className="w-4 h-4" />
+          <DuotoneIcon icon={Plus} className="w-4 h-4" />
         </button>
 
         <div className="w-[1px] h-4 bg-neutral-200 dark:bg-neutral-700 mx-0.5" />
@@ -611,7 +709,7 @@ export const Canvas: React.FC<CanvasProps> = ({
           className="p-2 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Fit to content"
         >
-          <Maximize className="w-4 h-4" />
+          <DuotoneIcon icon={Maximize} className="w-4 h-4" />
         </button>
       </div>
 
@@ -620,7 +718,7 @@ export const Canvas: React.FC<CanvasProps> = ({
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
           <div className="p-6 bg-white/90 dark:bg-[#1e2024]/90 backdrop-blur-md rounded-2xl border border-neutral-200/80 dark:border-neutral-700 shadow-lg text-center max-w-sm pointer-events-auto transition-colors">
             <div className="w-12 h-12 rounded-xl bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 flex items-center justify-center mx-auto mb-3">
-              <ZoomIn className="w-6 h-6" />
+              <DuotoneIcon icon={ZoomIn} className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-neutral-900 dark:text-neutral-100 text-sm">Your board is empty</h3>
             <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 mb-4">

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CanvasElement } from '../../types/milanote';
+import { DuotoneIcon } from '../DuotoneIcon';
 import { Folder, ArrowRight } from 'lucide-react';
 
 interface BoardElementProps {
@@ -38,7 +39,7 @@ export const BoardElement: React.FC<BoardElementProps> = ({
     >
       <div className="flex items-center justify-between mb-2">
         <div className="w-8 h-8 rounded-lg bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-          <Folder className="w-4 h-4 fill-sky-200 dark:fill-sky-800 text-sky-600 dark:text-sky-400" />
+          <DuotoneIcon icon={Folder} className="w-4 h-4 text-sky-600 dark:text-sky-400" />
         </div>
         <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
           {childItemCount} {childItemCount === 1 ? 'item' : 'items'}

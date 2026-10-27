@@ -1,5 +1,6 @@
 import React from 'react';
 import type { Board } from '../types/milanote';
+import { DuotoneIcon } from './DuotoneIcon';
 import {
   ChevronRight,
   Search,
@@ -85,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
         className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200/70 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-300 text-xs transition-colors border border-neutral-200/60 dark:border-neutral-700/60"
         title="Search cards & notes (Cmd/Ctrl+K)"
       >
-        <Search className="w-3.5 h-3.5" />
+        <DuotoneIcon icon={Search} className="w-3.5 h-3.5" />
         <span>Search board...</span>
         <kbd className="text-[10px] font-mono bg-white dark:bg-neutral-900 px-1.5 py-0.5 rounded border border-neutral-300 dark:border-neutral-700 text-neutral-400 dark:text-neutral-400">
           ⌘K
@@ -97,10 +98,10 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Template Switcher button */}
         <button
           onClick={onOpenTemplates}
-          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Browse board templates"
         >
-          <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+          <DuotoneIcon icon={Sparkles} className="w-3.5 h-3.5 text-amber-500" />
           <span className="hidden sm:inline">Templates</span>
         </button>
 
@@ -114,7 +115,7 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
           title={gridVisible ? 'Hide grid dots' : 'Show grid dots'}
         >
-          <Grid3X3 className="w-4 h-4" />
+          <DuotoneIcon icon={Grid3X3} className="w-4 h-4" />
         </button>
 
         <button
@@ -126,7 +127,7 @@ export const Header: React.FC<HeaderProps> = ({
           }`}
           title={gridSnap ? 'Snap to grid: Enabled' : 'Snap to grid: Disabled'}
         >
-          <Magnet className="w-4 h-4" />
+          <DuotoneIcon icon={Magnet} className="w-4 h-4" />
         </button>
 
         {/* Zoom display */}
@@ -140,7 +141,11 @@ export const Header: React.FC<HeaderProps> = ({
           className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} theme`}
         >
-          {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4 text-amber-400" />}
+          {theme === 'light' ? (
+            <DuotoneIcon icon={Moon} className="w-4 h-4" />
+          ) : (
+            <DuotoneIcon icon={Sun} className="w-4 h-4 text-amber-400" />
+          )}
         </button>
 
         {/* Reset */}
@@ -149,7 +154,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="p-1.5 rounded-lg text-neutral-400 dark:text-neutral-500 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
           title="Reset board to fresh state"
         >
-          <RotateCcw className="w-3.5 h-3.5" />
+          <DuotoneIcon icon={RotateCcw} className="w-3.5 h-3.5" />
         </button>
 
         <div className="w-[1px] h-5 bg-neutral-200 dark:bg-neutral-800 mx-1" />
@@ -159,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
           onClick={onOpenExport}
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-neutral-900 dark:bg-neutral-100 hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-900 text-xs font-medium shadow-xs transition-colors"
         >
-          <Share2 className="w-3.5 h-3.5" />
+          <DuotoneIcon icon={Share2} className="w-3.5 h-3.5" />
           <span>Export / Share</span>
         </button>
       </div>

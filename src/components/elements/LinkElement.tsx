@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { CanvasElement } from '../../types/milanote';
+import { DuotoneIcon } from '../DuotoneIcon';
 import { ExternalLink, Globe, Edit2, Check } from 'lucide-react';
 
 interface LinkElementProps {
@@ -81,7 +82,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
           <div className="flex flex-col gap-1.5 select-text">
             <div className="flex items-center justify-between">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300">
-                <Globe className="w-2.5 h-2.5" />
+                <DuotoneIcon icon={Globe} className="w-2.5 h-2.5" />
                 {domain}
               </span>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

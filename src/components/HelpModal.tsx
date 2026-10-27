@@ -1,4 +1,5 @@
 import React from 'react';
+import { DuotoneIcon } from './DuotoneIcon';
 import { X, Keyboard, HelpCircle } from 'lucide-react';
 
 interface HelpModalProps {
@@ -32,7 +33,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-100 dark:border-neutral-800">
           <div className="flex items-center gap-2">
-            <HelpCircle className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            <DuotoneIcon icon={HelpCircle} className="w-5 h-5 text-blue-600 dark:text-blue-400" />
             <h3 className="font-semibold text-base text-neutral-900 dark:text-white">Milanote Canvas Guide</h3>
           </div>
           <button
@@ -45,7 +46,7 @@ export const HelpModal: React.FC<HelpModalProps> = ({ isOpen, onClose }) => {
 
         <div className="p-6 overflow-y-auto max-h-[60vh] space-y-4">
           <div className="flex items-center gap-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
-            <Keyboard className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+            <DuotoneIcon icon={Keyboard} className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
             <span>Shortcuts & Gestures</span>
           </div>
 

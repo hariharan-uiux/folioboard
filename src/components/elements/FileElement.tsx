@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CanvasElement } from '../../types/milanote';
+import { DuotoneIcon } from '../DuotoneIcon';
 import { FileText, Download } from 'lucide-react';
 
 interface FileElementProps {
@@ -35,7 +36,7 @@ export const FileElement: React.FC<FileElementProps> = ({ element, onUpdate }) =
   return (
     <div className="flex items-center gap-3 h-full w-full bg-white dark:bg-[#1e2024] rounded-lg p-3.5 border border-neutral-200/90 dark:border-neutral-700/80 shadow-xs select-text">
       <div className="w-10 h-10 rounded-lg bg-red-50 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex flex-col items-center justify-center shrink-0">
-        <FileText className="w-5 h-5 text-red-500 dark:text-red-400" />
+        <DuotoneIcon icon={FileText} className="w-5 h-5 text-red-500 dark:text-red-400" />
       </div>
 
       <div className="flex-1 min-w-0">

@@ -1,5 +1,6 @@
 import React from 'react';
 import type { CanvasElement } from '../../types/milanote';
+import { DuotoneIcon } from '../DuotoneIcon';
 import { Columns3 } from 'lucide-react';
 
 interface ColumnElementProps {
@@ -20,7 +21,7 @@ export const ColumnElement: React.FC<ColumnElementProps> = ({ element, onUpdate 
   return (
     <div className="flex flex-col h-full w-full bg-neutral-100/70 dark:bg-[#18191c]/80 rounded-xl p-3 border-2 border-dashed border-neutral-300/80 dark:border-neutral-700/80">
       <div className="flex items-center gap-2 mb-2 pb-2 border-b border-neutral-200 dark:border-neutral-700">
-        <Columns3 className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
+        <DuotoneIcon icon={Columns3} className="w-4 h-4 text-neutral-500 dark:text-neutral-400" />
         <input
           type="text"
           value={data.title || ''}

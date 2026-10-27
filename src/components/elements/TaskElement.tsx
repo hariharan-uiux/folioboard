@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { CanvasElement, TaskItem } from '../../types/milanote';
+import { DuotoneIcon } from '../DuotoneIcon';
 import { CheckSquare, Plus, Trash2, CheckCircle2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -86,7 +87,8 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
     <div className="flex flex-col h-full w-full p-4 select-text">
       {/* Header & Title */}
       <div className="flex items-center gap-2 mb-2">
-        <CheckSquare
+        <DuotoneIcon
+          icon={CheckSquare}
           className={`w-4 h-4 ${
             isExplicitPastel
               ? 'text-neutral-700'

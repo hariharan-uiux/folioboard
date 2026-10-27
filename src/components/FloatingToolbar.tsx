@@ -1,6 +1,7 @@
 import React from 'react';
 import type { CanvasElement, AnchorPosition } from '../types/milanote';
 import { MILANOTE_PALETTES } from '../utils/templates';
+import { DuotoneIcon } from './DuotoneIcon';
 import { Copy, Trash2, ArrowUp, ArrowDown, GitBranch } from 'lucide-react';
 
 interface FloatingToolbarProps {
@@ -56,7 +57,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         title="Connect line to another card"
       >
-        <GitBranch className="w-3.5 h-3.5" />
+        <DuotoneIcon icon={GitBranch} className="w-3.5 h-3.5" />
       </button>
 
       {/* Layering */}
@@ -66,14 +67,14 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
           className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Bring to front"
         >
-          <ArrowUp className="w-3 h-3" />
+          <DuotoneIcon icon={ArrowUp} className="w-3 h-3" />
         </button>
         <button
           onClick={onSendBackward}
           className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
           title="Send to back"
         >
-          <ArrowDown className="w-3 h-3" />
+          <DuotoneIcon icon={ArrowDown} className="w-3 h-3" />
         </button>
       </div>
 
@@ -83,7 +84,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         className="p-1.5 rounded-lg text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
         title="Duplicate element (Ctrl+D)"
       >
-        <Copy className="w-3.5 h-3.5" />
+        <DuotoneIcon icon={Copy} className="w-3.5 h-3.5" />
       </button>
 
       {/* Delete */}
@@ -92,7 +93,7 @@ export const FloatingToolbar: React.FC<FloatingToolbarProps> = ({
         className="p-1.5 rounded-lg text-neutral-500 dark:text-neutral-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
         title="Delete (Backspace / Del)"
       >
-        <Trash2 className="w-3.5 h-3.5" />
+        <DuotoneIcon icon={Trash2} className="w-3.5 h-3.5" />
       </button>
     </div>
   );
