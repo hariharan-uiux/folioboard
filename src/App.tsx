@@ -56,6 +56,18 @@ export function App() {
     }
   }, [state.theme]);
 
+  // Global wheel handler: prevent browser native zoom on Ctrl+wheel anywhere
+  // The actual zoom logic (with mouse-position centering) remains in Canvas.handleWheel
+  useEffect(() => {
+    const handleGlobalWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('wheel', handleGlobalWheel, { passive: false });
+    return () => window.removeEventListener('wheel', handleGlobalWheel);
+  }, []);
+
   // Breadcrumbs calculation
   const breadcrumbs = useMemo(() => {
     const crumbs: { id: string; title: string }[] = [];
