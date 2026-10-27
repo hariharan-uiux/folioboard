@@ -16,10 +16,19 @@ import { SearchModal } from './components/SearchModal';
 import { ExportModal } from './components/ExportModal';
 import { TemplateModal } from './components/TemplateModal';
 import { HelpModal } from './components/HelpModal';
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 
 export function App() {
   const [state, setState] = useState<CanvasState>(getInitialState);
   const [activeTool, setActiveTool] = useState<'select' | 'hand'>('select');
+
+  // Lightweight Undo / Redo history
+  const [history, setHistory] = useState<
+    { elements: Record<string, CanvasElement>; connections: Record<string, Connection> }[]
+  >([]);
+  const [future, setFuture] = useState<
+    { elements: Record<string, CanvasElement>; connections: Record<string, Connection> }[]
+  >([]);
 
   // Modals state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -605,6 +614,7 @@ export function App() {
     }));
   };
 
+
   // Select item from search modal
   const handleSelectFromSearch = (elementId: string, boardId: string) => {
     const el = state.elements[elementId];
@@ -620,6 +630,172 @@ export function App() {
       },
     }));
   };
+
+  // ========================================================================
+  // Keyboard Shortcut Handlers & Undo/Redo
+  // ========================================================================
+
+  // Push current state to history for undo
+  const pushHistory = useCallback(() => {
+    setHistory((prev) => [...prev.slice(-49), { elements: state.elements, connections: state.connections }]);
+    setFuture([]);
+  }, [state.elements, state.connections]);
+
+  // Undo
+  const handleUndo = useCallback(() => {
+    if (history.length === 0) return;
+    const prev = history[history.length - 1];
+    setFuture((f) => [{ elements: state.elements, connections: state.connections }, ...f.slice(0, 49)]);
+    setHistory((h) => h.slice(0, -1));
+    setState((s) => ({ ...s, elements: prev.elements, connections: prev.connections }));
+  }, [history, state.elements, state.connections]);
+
+  // Redo
+  const handleRedo = useCallback(() => {
+    if (future.length === 0) return;
+    const next = future[0];
+    setHistory((h) => [...h.slice(-49), { elements: state.elements, connections: state.connections }]);
+    setFuture((f) => f.slice(1));
+    setState((s) => ({ ...s, elements: next.elements, connections: next.connections }));
+  }, [future, state.elements, state.connections]);
+
+  // Nudge selected elements
+  const handleNudgeSelected = useCallback((dx: number, dy: number) => {
+    if (state.selectedElementIds.length === 0) return;
+    pushHistory();
+    setState((prev) => {
+      const newElements = { ...prev.elements };
+      state.selectedElementIds.forEach((id) => {
+        const el = newElements[id];
+        if (el) {
+          newElements[id] = {
+            ...el,
+            x: el.x + dx,
+            y: el.y + dy,
+            updatedAt: Date.now(),
+          };
+        }
+      });
+      return { ...prev, elements: newElements };
+    });
+  }, [state.selectedElementIds, pushHistory]);
+
+  // Select all elements on current board
+  const handleSelectAll = useCallback(() => {
+    const allIds = Object.values(state.elements)
+      .filter((el) => el.boardId === state.currentBoardId)
+      .map((el) => el.id);
+    setState((p) => ({ ...p, selectedElementIds: allIds }));
+  }, [state.elements, state.currentBoardId]);
+
+  // Deselect all
+  const handleDeselectAll = useCallback(() => {
+    setState((p) => ({ ...p, selectedElementIds: [] }));
+  }, []);
+
+  // Cut selected elements (copy + delete)
+  const handleCutSelected = useCallback(() => {
+    if (state.selectedElementIds.length === 0) return;
+    // Copy to clipboard first
+    const selected = state.selectedElementIds
+      .map((id) => state.elements[id])
+      .filter(Boolean);
+    if (selected.length > 0) {
+      const payload = JSON.stringify({
+        __milanote_copy__: true,
+        elements: selected,
+      });
+      navigator.clipboard.writeText(payload);
+    }
+    // Then delete
+    handleDeleteSelected();
+  }, [state.selectedElementIds, state.elements, handleDeleteSelected]);
+
+  // Bring forward / send backward
+  const handleBringForward = useCallback(() => {
+    if (state.selectedElementIds.length === 0) return;
+    pushHistory();
+    setState((prev) => {
+      const newElements = { ...prev.elements };
+      state.selectedElementIds.forEach((id) => {
+        const el = newElements[id];
+        if (el) {
+          newElements[id] = { ...el, zIndex: (el.zIndex || 1) + 1, updatedAt: Date.now() };
+        }
+      });
+      return { ...prev, elements: newElements };
+    });
+  }, [state.selectedElementIds, pushHistory]);
+
+  const handleSendBackward = useCallback(() => {
+    if (state.selectedElementIds.length === 0) return;
+    pushHistory();
+    setState((prev) => {
+      const newElements = { ...prev.elements };
+      state.selectedElementIds.forEach((id) => {
+        const el = newElements[id];
+        if (el) {
+          newElements[id] = { ...el, zIndex: Math.max(0, (el.zIndex || 1) - 1), updatedAt: Date.now() };
+        }
+      });
+      return { ...prev, elements: newElements };
+    });
+  }, [state.selectedElementIds, pushHistory]);
+
+  // Zoom controls
+  const handleZoomIn = useCallback(() => setState((p) => ({ ...p, zoom: Math.min(2.5, p.zoom + 0.15) })), []);
+  const handleZoomOut = useCallback(() => setState((p) => ({ ...p, zoom: Math.max(0.25, p.zoom - 0.15) })), []);
+  const handleResetZoom = useCallback(() => setState((p) => ({ ...p, zoom: 1, pan: { x: 40, y: 40 } })), []);
+  const handleFitView = useCallback(() => {
+    const visible = Object.values(state.elements).filter((el) => el.boardId === state.currentBoardId);
+    if (visible.length === 0) {
+      setState((p) => ({ ...p, pan: { x: 40, y: 40 }, zoom: 1 }));
+      return;
+    }
+    const minX = Math.min(...visible.map((el) => el.x));
+    const minY = Math.min(...visible.map((el) => el.y));
+    setState((p) => ({ ...p, pan: { x: -minX + 80, y: -minY + 80 }, zoom: 0.9 }));
+  }, [state.elements, state.currentBoardId]);
+
+  // Navigate to parent board
+  const handleNavigateParentBoard = useCallback(() => {
+    const currentB = state.boards[state.currentBoardId];
+    const parentId = currentB?.parentId;
+    if (parentId) {
+      setState((p) => ({ ...p, currentBoardId: parentId, selectedElementIds: [], pan: { x: 60, y: 60 }, zoom: 1 }));
+    }
+  }, [state.boards, state.currentBoardId]);
+
+  const canNavigateUp = !!state.boards[state.currentBoardId]?.parentId;
+
+  // ========================================================================
+  // Register Global Keyboard Shortcuts
+  // ========================================================================
+
+  useKeyboardShortcuts({
+    onSelectTool: setActiveTool,
+    onAddElement: handleAddElementFromSidebar,
+    onSelectAll: handleSelectAll,
+    onDeselectAll: handleDeselectAll,
+    onDeleteSelected: handleDeleteSelected,
+    onDuplicateSelected: () => state.selectedElementIds.forEach((id) => handleDuplicateElement(id)),
+    onCutSelected: handleCutSelected,
+    onNudgeSelected: handleNudgeSelected,
+    onBringForward: handleBringForward,
+    onSendBackward: handleSendBackward,
+    onZoomIn: handleZoomIn,
+    onZoomOut: handleZoomOut,
+    onResetZoom: handleResetZoom,
+    onFitView: handleFitView,
+    onNavigateParentBoard: handleNavigateParentBoard,
+    onOpenSearch: () => setIsSearchOpen(true),
+    onOpenExport: () => setIsExportOpen(true),
+    onOpenHelp: () => setIsHelpOpen(true),
+    onUndo: handleUndo,
+    onRedo: handleRedo,
+    hasSelection: state.selectedElementIds.length > 0,
+    canNavigateUp,
+  });
 
   return (
     <div className={`flex flex-col h-screen w-screen overflow-hidden ${state.theme === 'dark' ? 'dark' : ''}`}>
