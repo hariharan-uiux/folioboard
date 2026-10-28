@@ -44,7 +44,7 @@ Built with **React 19**, **TypeScript**, **Tailwind CSS**, and **Vite**.
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js >= 18
+- Node.js >= 22.12 (or 20.19+)
 - npm >= 9
 
 ### Installation & Run
@@ -64,6 +64,37 @@ npm run dev
 npm run build
 npm run preview
 ```
+
+### 🐳 Run with Docker
+
+The image is a multi-stage build: Node 22 compiles the Vite bundle, then nginx serves the static files. No backend is required — boards are stored in the browser's `localStorage`.
+
+```bash
+# Build and start on http://localhost:8080
+docker compose up -d --build
+
+# Status and logs
+docker compose ps
+docker compose logs -f folioboard
+
+# Stop
+docker compose down
+```
+
+Use a different host port with `FOLIOBOARD_PORT`:
+
+```bash
+FOLIOBOARD_PORT=3000 docker compose up -d --build
+```
+
+Or run it without Compose:
+
+```bash
+docker build -t folioboard .
+docker run -d --name folioboard -p 8080:80 --restart unless-stopped folioboard
+```
+
+The nginx config provides SPA history fallback, gzip compression, long-lived caching for hashed assets, and a `/healthz` endpoint used by the container health check.
 
 ---
 
