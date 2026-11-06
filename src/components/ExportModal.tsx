@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { CanvasState } from '../types/folioboard';
 import { exportBoardAsJSON, exportBoardAsMarkdown } from '../utils/storage';
 import { X, Download, FileJson, FileText, Copy, Check, Upload, Printer } from 'lucide-react';
@@ -19,6 +19,16 @@ export const ExportModal: React.FC<ExportModalProps> = ({
   const [activeTab, setActiveTab] = useState<'markdown' | 'json'>('markdown');
   const [copied, setCopied] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
@@ -60,7 +70,7 @@ export const ExportModal: React.FC<ExportModalProps> = ({
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
-        if (parsed.board && parsed.elements) {
+        if (parsed && typeof parsed === 'object' && parsed.board && parsed.elements) {
           const newBoards = { ...state.boards, [parsed.board.id]: parsed.board };
           const newElements = { ...state.elements, ...parsed.elements };
           const newConnections = { ...state.connections, ...(parsed.connections || {}) };
@@ -73,8 +83,10 @@ export const ExportModal: React.FC<ExportModalProps> = ({
             connections: newConnections,
           });
           onClose();
+        } else {
+          setImportError('Invalid board JSON structure');
         }
-      } catch (err) {
+      } catch {
         setImportError('Invalid JSON board file. Please choose a valid board export.');
       }
     };

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { CanvasElement } from '../../types/folioboard';
 import { DuotoneIcon } from '../DuotoneIcon';
 import { ExternalLink, Globe, Edit2, ArrowRight, Link as LinkIcon } from 'lucide-react';
@@ -16,6 +16,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
   const [inputUrl, setInputUrl] = useState(data.url || '');
   const [faviconError, setFaviconError] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const fetchedUrlRef = useRef<string | null>(null);
 
   const isExplicitPastel = [
     '#fefce8',
@@ -32,28 +33,47 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
   // Auto-fetch OpenGraph image if URL exists but no image yet
   useEffect(() => {
     let active = true;
-    if (data.url && !data.image && !isEditing) {
+    if (
+      data.url &&
+      !data.image &&
+      !isEditing &&
+      !data.ogFetched &&
+      fetchedUrlRef.current !== data.url
+    ) {
+      fetchedUrlRef.current = data.url;
       fetchOpenGraphData(data.url).then((og) => {
-        if (!active || !og) return;
-        if (og.image || og.title || og.description) {
-          onUpdate(element.id, {
-            data: {
-              ...data,
-              image: og.image || data.image,
-              title: og.title || data.title,
-              description: og.description || data.description,
-              favicon: og.favicon || data.favicon,
-            },
-            height: og.image ? Math.max(element.height, 240) : element.height,
-            updatedAt: Date.now(),
-          });
-        }
+        if (!active) return;
+        onUpdate(element.id, {
+          data: {
+            ...element.data,
+            url: data.url,
+            image: og?.image || data.image,
+            title: og?.title || data.title,
+            description: og?.description || data.description,
+            favicon: og?.favicon || data.favicon,
+            ogFetched: true,
+          },
+          height: og?.image ? Math.max(element.height, 240) : element.height,
+          updatedAt: Date.now(),
+        });
       });
     }
     return () => {
       active = false;
     };
-  }, [data.url, data.image]);
+  }, [
+    data.url,
+    data.image,
+    data.title,
+    data.description,
+    data.favicon,
+    data.ogFetched,
+    element.data,
+    element.id,
+    element.height,
+    isEditing,
+    onUpdate,
+  ]);
 
   const handleConvert = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -65,6 +85,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
     setImageError(false);
 
     const initialHeight = meta.image ? Math.max(element.height, 240) : Math.max(element.height, 160);
+    fetchedUrlRef.current = meta.url;
 
     onUpdate(element.id, {
       data: {
@@ -75,6 +96,7 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
         domain: meta.domain,
         favicon: meta.favicon,
         image: meta.image || '',
+        ogFetched: false,
       },
       height: initialHeight,
       updatedAt: Date.now(),
@@ -94,12 +116,36 @@ export const LinkElement: React.FC<LinkElementProps> = ({ element, onUpdate }) =
             domain: meta.domain,
             favicon: og.favicon || meta.favicon,
             image: og.image || meta.image,
+            ogFetched: true,
           },
           height: (og.image || meta.image) ? Math.max(element.height, 240) : initialHeight,
           updatedAt: Date.now(),
         });
+      } else {
+        onUpdate(element.id, {
+          data: {
+            ...data,
+            url: meta.url,
+            title: meta.title,
+            description: meta.description,
+            domain: meta.domain,
+            favicon: meta.favicon,
+            image: meta.image || '',
+            ogFetched: true,
+          },
+          height: initialHeight,
+          updatedAt: Date.now(),
+        });
       }
-    } catch {}
+    } catch {
+      onUpdate(element.id, {
+        data: {
+          ...data,
+          ogFetched: true,
+        },
+        updatedAt: Date.now(),
+      });
+    }
   };
 
   const domain =

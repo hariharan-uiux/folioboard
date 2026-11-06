@@ -105,7 +105,7 @@ export function App() {
     id: state.currentBoardId,
     parentId: null,
     title: 'Main Board',
-    createdAt: Date.now(),
+    createdAt: 0,
   };
 
   // Navigate to another board
@@ -186,7 +186,7 @@ export function App() {
     y: number,
     customData?: any
   ): CanvasElement => {
-    const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     let width = 280;
     let height = 180;
     let color = '#ffffff';
@@ -376,7 +376,7 @@ export function App() {
         /^(image|screenshot|pasted[\s_-]?image|web[\s_-]?image)(\.\w+)?$/i.test(name.trim());
       const captionVal = isGeneric ? '' : name.replace(/\.[^/.]+$/, '').trim();
 
-      const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const newImgEl: CanvasElement = {
         id,
         boardId: state.currentBoardId,
@@ -426,7 +426,7 @@ export function App() {
       const newSelectedIds: string[] = [];
 
       items.forEach((item, index) => {
-        const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         const w = item.width || (item.isVideo ? 380 : 320);
         const h = item.height || (item.isVideo ? 260 : 320);
 
@@ -490,7 +490,7 @@ export function App() {
       const newSelectedIds: string[] = [];
 
       files.forEach((file, index) => {
-        const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+        const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
         const w = 300;
         const h = 86;
         const posX = baseCenterX + (index % 2) * (w + 20);
@@ -620,7 +620,7 @@ export function App() {
             const newSelectedIds: string[] = [];
 
             parsed.elements.forEach((orig: CanvasElement, idx: number) => {
-              const newId = `el_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`;
+              const newId = `el_${Date.now()}_${idx}_${Math.random().toString(36).slice(2, 6)}`;
               newElements[newId] = {
                 ...orig,
                 id: newId,
@@ -656,7 +656,7 @@ export function App() {
             (-state.pan.y + window.innerHeight / 2 - height / 2) / state.zoom
           );
 
-          const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
           const newLinkEl: CanvasElement = {
             id,
             boardId: state.currentBoardId,
@@ -704,7 +704,7 @@ export function App() {
             (-state.pan.y + window.innerHeight / 2 - height / 2) / state.zoom
           );
 
-          const id = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+          const id = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
           const newNoteEl: CanvasElement = {
             id,
             boardId: state.currentBoardId,
@@ -821,7 +821,7 @@ export function App() {
       const original = prev.elements[id];
       if (!original) return prev;
 
-      const newId = `el_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+      const newId = `el_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const duplicated: CanvasElement = {
         ...original,
         id: newId,
@@ -850,7 +850,7 @@ export function App() {
     fromAnchor: AnchorPosition,
     toAnchor: AnchorPosition
   ) => {
-    const connId = `conn_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const connId = `conn_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const newConn: Connection = {
       id: connId,
       boardId: state.currentBoardId,

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
 import type { CanvasElement, SketchStroke } from '../../types/folioboard';
 import { RotateCcw, PenTool } from 'lucide-react';
 
@@ -17,7 +17,7 @@ export const SketchElement: React.FC<SketchElementProps> = ({ element, onUpdate 
   const [currentColor, setCurrentColor] = useState(PEN_COLORS[0]);
   const [currentStroke, setCurrentStroke] = useState<{ x: number; y: number }[]>([]);
 
-  const strokes: SketchStroke[] = data.strokes || [];
+  const strokes = useMemo<SketchStroke[]>(() => data.strokes || [], [data.strokes]);
 
   // Redraw canvas on stroke update or resize
   useEffect(() => {

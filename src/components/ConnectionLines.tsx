@@ -15,7 +15,7 @@ interface ConnectionLinesProps {
   } | null;
 }
 
-export function getAnchorPoint(el: CanvasElement, anchor: AnchorPosition): { x: number; y: number } {
+function getAnchorPoint(el: CanvasElement, anchor: AnchorPosition): { x: number; y: number } {
   const { x, y, width, height } = el;
   switch (anchor) {
     case 'top':

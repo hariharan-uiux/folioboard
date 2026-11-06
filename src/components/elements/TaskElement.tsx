@@ -55,7 +55,7 @@ export const TaskElement: React.FC<TaskElementProps> = ({ element, onUpdate }) =
   const handleAddItem = () => {
     if (!newText.trim()) return;
     const newItem: TaskItem = {
-      id: `task_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      id: `task_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       text: newText.trim(),
       completed: false,
     };

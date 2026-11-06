@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { TEMPLATES } from '../utils/templates';
 import { X, Sparkles, Palette, Film, SquarePlus } from 'lucide-react';
 
@@ -19,6 +19,16 @@ export const TemplateModal: React.FC<TemplateModalProps> = ({
   onClose,
   onLoadTemplate,
 }) => {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (

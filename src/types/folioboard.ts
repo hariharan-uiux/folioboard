@@ -46,6 +46,7 @@ export interface LinkData {
   favicon?: string;
   image?: string;
   domain?: string;
+  ogFetched?: boolean;
 }
 
 export interface TaskData {
