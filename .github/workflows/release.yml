@@ -43,7 +43,10 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-installers
-          path: release/*.{AppImage,deb,tar.gz}
+          path: |
+            release/*.AppImage
+            release/*.deb
+            release/*.tar.gz
           retention-days: 7
 
   build-windows:
@@ -74,7 +77,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: windows-installers
-          path: release/*.exe
+          path: |
+            release/*.exe
           retention-days: 7
 
   release:
@@ -83,24 +87,16 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v') && always()
     steps:
-      - name: Download Linux artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          name: linux-installers
-          path: artifacts/linux
-
-      - name: Download Windows artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-installers
-          path: artifacts/windows
+          path: artifacts
 
       - name: Publish Release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/linux/*
-            artifacts/windows/*
+            artifacts/**/*
           generate_release_notes: true
           draft: false
           prerelease: false

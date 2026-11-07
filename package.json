@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.1",
   "description": "Visual infinite canvas for moodboards, creative ideation, notes, and interactive design systems.",
-  "author": "HariHaran",
+  "author": "HariHaran <haridhina3051@gmail.com>",
   "type": "module",
   "main": "electron-main.cjs",
   "scripts": {
