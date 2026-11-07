@@ -1,7 +1,7 @@
 {
   "name": "folioboard",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Visual infinite canvas for moodboards, creative ideation, notes, and interactive design systems.",
   "author": "HariHaran <haridhina3051@gmail.com>",
   "type": "module",
